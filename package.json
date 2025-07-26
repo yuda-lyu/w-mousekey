@@ -1,0 +1,41 @@
+{
+  "name": "w-mousekey",
+  "version": "1.0.0",
+  "main": "dist/w-mousekey.umd.js",
+  "dependencies": {
+    "@u4/opencv4nodejs": "^7.1.2",
+    "json5": "^2.2.3",
+    "screenshot-desktop": "^1.15.1",
+    "sharp": "^0.34.3",
+    "wsemi": "^1.8.16"
+  },
+  "devDependencies": {
+    "w-package-tools": "^1.1.2"
+  },
+  "opencv4nodejs": {
+    "disableAutoBuild": "1",
+    "opencvIncludeDir": "C:\\tools\\opencv\\build\\include",
+    "opencvLibDir": "C:\\tools\\opencv\\build\\x64\\vc16\\lib",
+    "opencvBinDir": "C:\\tools\\opencv\\build\\x64\\vc16\\bin"
+  },
+  "scripts": {
+    "test": "mocha --parallel --timeout 60000",
+    "deploy": "gh-pages -d docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuda-lyu/w-mousekey.git"
+  },
+  "keywords": [
+    "package",
+    "tool",
+    "opencv",
+    "opencv4nodejs",
+    "detect",
+    "mouse",
+    "keyboard",
+    "node"
+  ],
+  "author": "yuda-lyu(semisphere)",
+  "license": "MIT"
+}
