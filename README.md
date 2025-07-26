@@ -11,6 +11,9 @@ An operator for mouse and keyboard in nodejs.
 ## Documentation
 To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-mousekey/WMousekey.html).
 
+## Core
+> `w-mousekey` is basing on `AutoHotkey`.
+
 ## Installation
 ### Using npm(ES6 module):
 ```alias

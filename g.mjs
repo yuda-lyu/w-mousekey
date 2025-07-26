@@ -1,4 +1,4 @@
-
+import getSettings from './getSettings.mjs'
 import mk from './src/mousekey.mjs'
 import sc from './src/screen.mjs'
 import cp from './src/compare.mjs'
@@ -7,6 +7,9 @@ import ckPic from './src/ckPic.mjs'
 
 setTimeout(async() => {
     let r
+
+    // let st = getSettings()
+    // console.log('st', st)
 
     // //mouseClick
     // await mk.mouseClick(215, 905)
