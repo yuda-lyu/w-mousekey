@@ -57,7 +57,7 @@ let ckPic = async(name, opt = {}) => {
     let dx = get(opt, 'dx', 0)
     let dy = get(opt, 'dy', 0)
 
-    let noClick = get(opt, 'noClick', false)
+    let withClick = get(opt, 'withClick', true)
 
     //screenSave
     await sc.screenSave(x, y, width, height, fpAll)
@@ -79,10 +79,12 @@ let ckPic = async(name, opt = {}) => {
 
     if (r.similarity > threshold) {
 
-        //mouseClick
-        if (!noClick) {
+        if (withClick) {
+
+            //mouseClick
             await mk.mouseClick(r.cx + x + dx, r.cy + y + dy)
             // console.log('mouseClick',r.cx, r.cy)
+
         }
 
         b = true
