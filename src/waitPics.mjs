@@ -21,7 +21,7 @@ let waitPics = async(names, opt = {}) => {
     let timeDelay = get(opt, 'timeDelay', 1500)
 
     for (let i = 1; i <= numMax; i++) {
-        console.log(`waitPics names[${names}]...${i}`)
+        console.log(`waitPics names[${names}]...`, i)
 
         let bb = false
         for (let j = 0; j < size(names); j++) {
