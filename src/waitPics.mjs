@@ -5,7 +5,8 @@ import delay from 'wsemi/src/delay.mjs'
 import ckPic from './ckPic.mjs'
 
 
-let waitPic = async(names, opt = {}) => {
+let waitPics = async(names, opt = {}) => {
+    //waitPics是偵測若有一張圖成功就可結束, 若都失敗則須於嘗試完全部次數才能結束
     let b = false
 
     //check
@@ -20,7 +21,7 @@ let waitPic = async(names, opt = {}) => {
     let timeDelay = get(opt, 'timeDelay', 1500)
 
     for (let i = 1; i <= numMax; i++) {
-        console.log(`waitPic names[${names}]...${i}`)
+        console.log(`waitPics names[${names}]...${i}`)
 
         let bb = false
         for (let j = 0; j < size(names); j++) {
@@ -47,4 +48,4 @@ let waitPic = async(names, opt = {}) => {
 }
 
 
-export default waitPic
+export default waitPics
