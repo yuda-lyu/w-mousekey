@@ -54,10 +54,10 @@ let ckPic = async(name, opt = {}) => {
     let height = get(opt, 'height', 1080)
 
     let threshold = get(opt, 'threshold', 0.9)
-    let dx = get(opt, 'dx', 0)
-    let dy = get(opt, 'dy', 0)
 
     let withClick = get(opt, 'withClick', true)
+
+    let withDrag = get(opt, 'withDrag', false)
 
     //screenSave
     await sc.screenSave(x, y, width, height, fpAll)
@@ -81,9 +81,25 @@ let ckPic = async(name, opt = {}) => {
 
         if (withClick) {
 
+            let dx = get(opt, 'dx', 0)
+            let dy = get(opt, 'dy', 0)
+
             //mouseClick
             await mk.mouseClick(r.cx + x + dx, r.cy + y + dy)
             // console.log('mouseClick',r.cx, r.cy)
+
+        }
+
+        if (withDrag) {
+
+            let dx1 = get(opt, 'dx1', 0)
+            let dy1 = get(opt, 'dy1', 0)
+            let dx2 = get(opt, 'dx2', 0)
+            let dy2 = get(opt, 'dy2', 0)
+
+            //mouseDrag
+            await mk.mouseDrag(r.cx + x + dx1, r.cy + y + dy1, r.cx + x + dx2, r.cy + y + dy2)
+            // console.log('mouseDrag',r.cx, r.cy)
 
         }
 
