@@ -1,6 +1,6 @@
 {
   "name": "w-mousekey",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/w-mousekey.umd.js",
   "dependencies": {
     "@u4/opencv4nodejs": "^7.1.2",

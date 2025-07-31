@@ -33,6 +33,7 @@ if (true) {
 //https://www.autohotkey.com/download/
 let ahkExePath = `${fdExe}/AutoHotkey64.exe` //path.resolve('./AutoHotkey_2.0.19/AutoHotkey64.exe')
 let ahkScriptPathClick = `${fdExe}/zclick.ahk` //path.resolve('./AutoHotkey_2.0.19/zclick.ahk')
+let ahkScriptPathDrag = `${fdExe}/zdrag.ahk` //path.resolve('./AutoHotkey_2.0.19/zclick.ahk')
 let ahkScriptPathSend = `${fdExe}/zsend.ahk` //path.resolve('./AutoHotkey_2.0.19/zsend.ahk')
 
 async function runAhkScript(ahkExePath, ahkScriptPath, args = []) {
@@ -61,6 +62,10 @@ async function mouseClick(x, y) {
     await runAhkScript(ahkExePath, ahkScriptPathClick, [x, y])
 }
 
+async function mouseDrag(x1, y1, x2, y2) {
+    await runAhkScript(ahkExePath, ahkScriptPathDrag, [x1, y1, x2, y2])
+}
+
 // async function mouseDown(x, y) {
 // }
 
@@ -85,6 +90,7 @@ let obj = {
     // mouseDown,
     // mouseUp,
     mouseClick,
+    mouseDrag,
     // keyDown,
     // keyUp,
     sendKey,

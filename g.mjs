@@ -16,6 +16,9 @@ setTimeout(async() => {
     // await mk.mouseClick(100, 100)
     // await mk.mouseClick(676, 908)
 
+    // //mouseDrag
+    // await mk.mouseDrag(1911, 200, 1911, 345)
+
     // //sendString
     // await mk.sendString('Hello World!')
     // await mk.sendString('abc中文')
