@@ -45,10 +45,30 @@ To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-
   echo $Env:OPENCV_INCLUDE_DIR
   echo $Env:OPENCV_LIB_DIR
   echo $Env:OPENCV_BIN_DIR
+  要能出現路徑才算完成安裝
 
-5.執行npm i @u4/opencv4nodejs，若msvs有多版本則須指定npm i @u4/opencv4nodejs --msvs_version=2022
+4.輸出變數確認
+   echo $Env:OPENCV_INCLUDE_DIR
+   echo $Env:OPENCV_LIB_DIR
+   echo $Env:OPENCV_BIN_DIR
+   要能出現路徑才算完成安裝
 
-6.執行npm i w-mousekey
+5.下載與安裝Python3，開啟自訂設定勾選Add Python.exe to PATH
+   使用cmd輸入以下指令測試:
+   python --version
+   where python
+   要能出現安裝版本與執行檔路徑才算完成安裝
+
+6.下載安裝Visual Studio Build Tools
+   下載網址: https://visualstudio.microsoft.com/zh-hant/downloads/
+   下載Community版即可
+   安裝時要勾選「使用 C++ 的桌面開發」，其內右側會勾選Windows SDK與MSVC，MSVC內會提供MSBuild
+
+7.執行npm i -g node-gyp
+
+8.執行npm i @u4/opencv4nodejs，若msvs有多版本則須指定npm i @u4/opencv4nodejs --msvs_version=2022
+
+9.執行npm i w-mousekey
 
 ```
 #### Example for collection
