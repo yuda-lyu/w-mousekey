@@ -20,7 +20,7 @@ To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-
 
 1.下載OpenCV，下載網址：
   https://github.com/opencv/opencv/releases選opencv-4.12.0-windows.exe
- windows.exe為免安裝版，下載後解壓縮至C:\tools
+ windows.exe為免安裝版，下載後解壓縮(不要複製本機檔案，可能因編譯導致檔案格式變更，而無法讓對方編譯)至C:\tools
  注意須確保路徑有效：
    C:\tools\opencv\build\include
    C:\tools\opencv\build\x64\vc16\bin

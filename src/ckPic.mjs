@@ -38,6 +38,15 @@ let ckPic = async(name, opt = {}) => {
         fsCreateFolder(fdTmp)
     }
 
+    //modeCompare
+    let modeCompare = get(opt, 'modeCompare', 'gray')
+
+    //useToGray
+    let useToGray = true
+    if (modeCompare === 'color') {
+        useToGray = false
+    }
+
     //fpTar
     let fpTar = `${fdTar}/${name}.png`
     if (!fsIsFile(fpTar)) {
@@ -63,7 +72,7 @@ let ckPic = async(name, opt = {}) => {
     await sc.screenSave(x, y, width, height, fpAll)
 
     //calcSimilarityAndDraw
-    let r = await cp.calcSimilarityAndDraw(fpTar, fpAll, 1, fpDet)
+    let r = await cp.calcSimilarityAndDraw(fpTar, fpAll, 1, fpDet, { useToGray })
     // console.log('calcSimilarityAndDraw',r)
     console.log(name, 'similarity', r.similarity)
 
