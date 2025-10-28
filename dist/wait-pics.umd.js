@@ -1,5 +1,5 @@
 /*!
- * wait-pics v1.0.7
+ * wait-pics v1.0.8
  * (c) 2018-2021 yuda-lyu(semisphere)
  * Released under the MIT License.
  */
