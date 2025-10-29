@@ -15,6 +15,7 @@ To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-
 > `w-mousekey` is basing on `OpenCV`, `@u4/opencv4nodejs` and `AutoHotkey`.
 
 ## Installation
+
 ### Using npm(ES6 module):
 ```alias
 
@@ -71,6 +72,7 @@ To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-
 9.執行npm i w-mousekey
 
 ```
+
 #### Example for collection
 > **Link:** [[dev source code](https://github.com/yuda-lyu/w-mousekey/blob/master/g.mjs)]
 ```alias
