@@ -1,13 +1,13 @@
 {
   "name": "w-mousekey",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "dist/w-mousekey.umd.js",
   "dependencies": {
     "@u4/opencv4nodejs": "^7.1.2",
     "json5": "^2.2.3",
     "screenshot-desktop": "^1.15.3",
-    "sharp": "^0.34.4",
-    "wsemi": "^1.8.23"
+    "sharp": "^0.34.5",
+    "wsemi": "^1.8.34"
   },
   "devDependencies": {
     "w-package-tools": "^1.1.2"

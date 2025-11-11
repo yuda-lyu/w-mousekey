@@ -41,7 +41,7 @@ async function calcSimilarityCore(imgTar, imgScreen, scale, opt = {}) {
     )
 
     //check
-    if (imgTarResize.rows < 10 || imgTarResize.cols < 10) {
+    if (imgTarResize.rows < 5 || imgTarResize.cols < 5) {
         throw new Error(`縮放後檢測尺寸過小: [imgTarResize:${imgTarResize.cols}x${imgTarResize.rows}]`)
     }
 
