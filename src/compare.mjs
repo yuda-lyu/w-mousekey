@@ -66,18 +66,21 @@ async function calcSimilarityCore(imgTar, imgScreen, scale, opt = {}) {
     }
 
     //minMaxLoc
-    let { maxVal, minVal, maxLoc } = result.minMaxLoc()
+    let { maxVal, minVal, maxLoc, minLoc } = result.minMaxLoc()
 
     //params
     let similarity = null
+    let loc = null
     if (useToGray) {
         similarity = maxVal
+        loc = maxLoc
     }
     else {
         similarity = 1 - minVal
+        loc = minLoc
     }
-    let x = maxLoc.x
-    let y = maxLoc.y
+    let x = loc.x
+    let y = loc.y
     let width = imgTarResize.cols
     let height = imgTarResize.rows
 
