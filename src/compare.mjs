@@ -57,13 +57,25 @@ async function calcSimilarityCore(imgTar, imgScreen, scale, opt = {}) {
     }
 
     //matchTemplate
-    let result = imgScreen.matchTemplate(imgTarResize, cv.TM_CCOEFF_NORMED)
+    let result = null
+    if (useToGray) {
+        result = imgScreen.matchTemplate(imgTarResize, cv.TM_CCOEFF_NORMED) //標準化相關係數, 比較的是結構形狀, 代表相似度, 越大越像
+    }
+    else {
+        result = imgScreen.matchTemplate(imgTarResize, cv.TM_SQDIFF_NORMED) //標準化平方差, 對亮度與顏色敏感, 代表誤差度, 越小越像
+    }
 
     //minMaxLoc
-    let { maxVal, maxLoc } = result.minMaxLoc()
+    let { maxVal, minVal, maxLoc } = result.minMaxLoc()
 
     //params
-    let similarity = maxVal
+    let similarity = null
+    if (useToGray) {
+        similarity = maxVal
+    }
+    else {
+        similarity = 1 - minVal
+    }
     let x = maxLoc.x
     let y = maxLoc.y
     let width = imgTarResize.cols
