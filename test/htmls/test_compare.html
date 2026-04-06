@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Compare Test</title>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #e0e0e0; padding: 40px; }
+.buttons { display: flex; gap: 40px; }
+.buttons img { cursor: pointer; display: block; image-rendering: pixelated; }
+#result { margin-top: 30px; font-size: 24px; font-family: monospace; min-height: 36px; }
+</style>
+</head>
+<body>
+<div class="buttons">
+  <img src="../imgs/btn_a.png" width="80" height="80" onclick="document.getElementById('result').textContent='A'">
+  <img src="../imgs/btn_b.png" width="80" height="80" onclick="document.getElementById('result').textContent='B'">
+  <img src="../imgs/btn_c.png" width="80" height="80" onclick="document.getElementById('result').textContent='C'">
+</div>
+<div id="result"></div>
+</body>
+</html>

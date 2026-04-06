@@ -1,4 +1,4 @@
-import getSettings from './getSettings.mjs'
+import getSettings from './src/getSettings.mjs'
 import mk from './src/mousekey.mjs'
 import sc from './src/screen.mjs'
 import cp from './src/compare.mjs'
