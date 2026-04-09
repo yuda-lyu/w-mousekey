@@ -1,12 +1,16 @@
 import getSettings from './src/getSettings.mjs'
-import mk from './src/mousekey.mjs'
 import sc from './src/screen.mjs'
+import mk from './src/mousekey.mjs'
 import cp from './src/compare.mjs'
 import ckPic from './src/ckPic.mjs'
 
 
 setTimeout(async() => {
     let r
+
+    //注入外部實作
+    // sc.init({ screenshot: myScreenshotFn })
+    // mk.init({ moukey: myMouKeyFn })
 
     // let st = getSettings()
     // console.log('st', st)

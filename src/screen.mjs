@@ -3,10 +3,34 @@ import screenshot from 'screenshot-desktop'
 import sharp from 'sharp'
 
 
+let _initialized = false
+let _externalScreenshot = null
+
+
+/**
+ * @param {Object} opt
+ * @param {Function} opt.screenshot - async () => Buffer(png), 回傳整個畫面的PNG Buffer
+ */
+function init(opt = {}) {
+    if (typeof opt.screenshot === 'function') {
+        _externalScreenshot = opt.screenshot
+        _initialized = true
+    }
+}
+
+
 async function getScreen() {
 
-    //screenshot
-    let img = await screenshot({ format: 'png' })
+    let img
+
+    if (_initialized && _externalScreenshot) {
+        //使用外部注入的截圖函數
+        img = await _externalScreenshot()
+    }
+    else {
+        //未初始化, 使用內建screenshot-desktop
+        img = await screenshot({ format: 'png' })
+    }
 
     //check
     if (!img || img.length === 0) {
@@ -66,6 +90,7 @@ async function screenSave(x, y, width, height, fp) {
 }
 
 let obj = {
+    init,
     screenFull,
     screen,
     screenFullSave,

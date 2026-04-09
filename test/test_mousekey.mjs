@@ -27,6 +27,17 @@ describe('mousekey', function () {
         await page.goto(fileUrl('test_mousekey.html'))
         await page.waitForLoadState('load')
         await page.bringToFront()
+        await page.waitForTimeout(300)
+
+        //用AHK物理點擊視窗中央, 確保OS焦點在瀏覽器
+        let center = await page.evaluate(() => ({
+            x: Math.round(window.screenX + window.outerWidth / 2),
+            y: Math.round(window.screenY + window.outerHeight / 2),
+        }))
+        await mk.mouseClick(center.x, center.y)
+        await page.waitForTimeout(300)
+
+        //再用Playwright聚焦input
         await page.click('#input1')
         await page.waitForTimeout(300)
 
