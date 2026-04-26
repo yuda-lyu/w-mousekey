@@ -8,12 +8,22 @@
 body { background: #f0f0f0; padding: 40px; }
 input { font-size: 18px; padding: 8px 12px; width: 300px; margin-bottom: 20px; display: block; }
 button { font-size: 18px; padding: 10px 30px; cursor: pointer; margin-bottom: 20px; display: block; }
-#result { font-size: 24px; font-family: monospace; min-height: 36px; }
+#result, #wheelInfo { font-size: 18px; font-family: monospace; min-height: 26px; }
 </style>
 </head>
-<body>
+<body oncontextmenu="document.getElementById('result').textContent='RIGHTCLICKED'; return false;">
 <input id="input1" type="text" placeholder="Type here...">
-<img id="btn1" src="../imgs/btn_a.png" width="80" height="80" onclick="document.getElementById('result').textContent='CLICKED'" style="cursor:pointer; display:block; margin-bottom:20px; image-rendering:pixelated;">
+<img id="btn1" src="../imgs/btn_a.png" width="80" height="80"
+    onclick="document.getElementById('result').textContent='CLICKED'"
+    ondblclick="document.getElementById('result').textContent='DBLCLICKED'"
+    style="cursor:pointer; display:block; margin-bottom:20px; image-rendering:pixelated;">
 <div id="result"></div>
+<div id="wheelInfo"></div>
+<script>
+window.addEventListener('wheel', (e) => {
+    let dir = e.deltaY > 0 ? 'DOWN' : (e.deltaY < 0 ? 'UP' : 'NONE')
+    document.getElementById('wheelInfo').textContent = dir
+}, { passive: true })
+</script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+/*!
+ * key-syntax v1.0.16
+ * (c) 2018-2021 yuda-lyu(semisphere)
+ * Released under the MIT License.
+ */
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self)["key-syntax"]=t()}(this,function(){"use strict";let e={ctrl:"^",control:"^",control_l:"^",control_r:"^",shift:"+",shift_l:"+",shift_r:"+",alt:"!",alt_l:"!",alt_r:"!",super:"#",super_l:"#",super_r:"#",meta:"#",win:"#"},t={return:"Enter",enter:"Enter",tab:"Tab",escape:"Escape",esc:"Escape",backspace:"Backspace",delete:"Delete",del:"Delete",insert:"Insert",ins:"Insert",home:"Home",end:"End",page_up:"PgUp",pageup:"PgUp",prior:"PgUp",page_down:"PgDn",pagedown:"PgDn",next:"PgDn",up:"Up",down:"Down",left:"Left",right:"Right",space:"Space",caps_lock:"CapsLock",capslock:"CapsLock",num_lock:"NumLock",numlock:"NumLock",print:"PrintScreen",printscreen:"PrintScreen",pause:"Pause"};for(let e=1;e<=24;e++)t[`f${e}`]=`F${e}`;return{xdotoolToAhk:function(o){if("string"!=typeof o||0===o.length)throw new Error(`xdotoolToAhk: invalid input: ${o}`);let n=o.split("+").map(e=>e.trim()).filter(e=>e.length>0);if(0===n.length)throw new Error("xdotoolToAhk: empty input");let r,l=n[n.length-1],i=n.slice(0,-1),p="";for(let t of i){let o=e[t.toLowerCase()];if(!o)throw new Error(`xdotoolToAhk: unknown modifier: ${t}`);p+=o}if(1===l.length)r=l;else{let e=t[l.toLowerCase()];r=e?`{${e}}`:`{${l}}`}return p+r}}});
+//# sourceMappingURL=key-syntax.umd.js.map

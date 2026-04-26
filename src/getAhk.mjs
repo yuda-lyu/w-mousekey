@@ -27,17 +27,21 @@ function getAhk() {
 
     //AutoHotkey, 於windows直接下載免安裝檔調用
     //https://www.autohotkey.com/download/
-    let ahkExePath = `${fdExe}/AutoHotkey64.exe` //path.resolve('./AutoHotkey_2.0.19/AutoHotkey64.exe')
-    let ahkScriptPathClick = `${fdExe}/zclick.ahk` //path.resolve('./AutoHotkey_2.0.19/zclick.ahk')
-    let ahkScriptPathDrag = `${fdExe}/zdrag.ahk` //path.resolve('./AutoHotkey_2.0.19/zclick.ahk')
-    let ahkScriptPathSend = `${fdExe}/zsend.ahk` //path.resolve('./AutoHotkey_2.0.19/zsend.ahk')
-    let ahkScriptPathRecord = `${fdExe}/zrecord.ahk` //path.resolve('./AutoHotkey_2.0.19/zrecord.ahk')
+    let ahkExePath = `${fdExe}/AutoHotkey64.exe`
+    let ahkScriptPathClick = `${fdExe}/zclick.ahk`
+    let ahkScriptPathDrag = `${fdExe}/zdrag.ahk`
+    let ahkScriptPathSend = `${fdExe}/zsend.ahk`
+    let ahkScriptPathSendCombo = `${fdExe}/zsendcombo.ahk`
+    let ahkScriptPathWheel = `${fdExe}/zwheel.ahk`
+    let ahkScriptPathRecord = `${fdExe}/zrecord.ahk`
 
     return {
         ahkExePath,
         ahkScriptPathClick,
         ahkScriptPathDrag,
         ahkScriptPathSend,
+        ahkScriptPathSendCombo,
+        ahkScriptPathWheel,
         ahkScriptPathRecord,
     }
 }

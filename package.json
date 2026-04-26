@@ -1,17 +1,17 @@
 {
   "name": "w-mousekey",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "main": "dist/w-mousekey.umd.js",
   "dependencies": {
     "@techstark/opencv-js": "^4.12.0-release.1",
     "json5": "^2.2.3",
-    "screenshot-desktop": "^1.15.3",
+    "screenshot-desktop": "^1.15.4",
     "sharp": "^0.34.5",
-    "wsemi": "^1.8.44"
+    "wsemi": "^1.8.47"
   },
   "devDependencies": {
     "playwright": "^1.59.1",
-    "w-package-tools": "^1.1.4"
+    "w-package-tools": "^1.1.5"
   },
   "scripts": {
     "test": "mocha --no-parallel --timeout 60000",
