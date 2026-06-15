@@ -14,6 +14,7 @@ rollupFiles({
     globals: {
         'path': 'path',
         'fs': 'fs',
+        'os': 'os',
         'child_process': 'child_process',
         'util': 'util',
         '@u4/opencv4nodejs': '@u4/opencv4nodejs',
@@ -23,6 +24,7 @@ rollupFiles({
     external: [
         'path',
         'fs',
+        'os',
         'child_process',
         'util',
         '@u4/opencv4nodejs',

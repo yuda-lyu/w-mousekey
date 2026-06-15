@@ -11,8 +11,8 @@ function getAhk() {
     let fnExe = 'AutoHotkey64.exe'
     let fdExe = ''
     if (true) {
-        let fdExeSrc = `${fdSrv}/AutoHotkey_2.0.19/`
-        let fdExeNM = `${fdSrv}/node_modules/w-mousekey/AutoHotkey_2.0.19/`
+        let fdExeSrc = `${fdSrv}/_autoHotkey/`
+        let fdExeNM = `${fdSrv}/node_modules/w-mousekey/_autoHotkey/`
         if (fsIsFile(`${fdExeSrc}${fnExe}`)) {
             fdExe = fdExeSrc
         }
