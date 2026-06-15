@@ -1,14 +1,10 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import screenshot from 'screenshot-desktop'
 import sharp from 'sharp'
+import screenshot from 'screenshot-desktop'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
-
-
-const execFileP = promisify(execFile)
+import execProcess from 'wsemi/src/execProcess.mjs'
 
 
 let _initialized = false
@@ -58,8 +54,8 @@ async function getScreenWin32() {
     _shotSeq += 1
     let fpOut = path.join(os.tmpdir(), `w-mousekey-shot-${process.pid}-${_shotSeq}.png`)
 
-    //以完整路徑直接執行exe, 截全螢幕存成png (windowsHide避免閃出console視窗)
-    await execFileP(fpExe, [fpOut], { windowsHide: true })
+    //以完整路徑直接執行exe, 截全螢幕存成png (execProcess的windowsHide已內建, 避免閃出console視窗)
+    await execProcess(fpExe, [fpOut], { mode: 'execFile' })
 
     //read & cleanup
     let img = fs.readFileSync(fpOut)

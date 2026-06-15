@@ -1,12 +1,7 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import genPm from 'wsemi/src/genPm.mjs'
+import execProcess from 'wsemi/src/execProcess.mjs'
 import getAhk from './getAhk.mjs'
 import ks from './keySyntax.mjs'
 
-
-//execFileAsync
-let execFileAsync = promisify(execFile)
 
 let _initialized = false
 let _moukeyExternal = null
@@ -55,7 +50,6 @@ function normalizeDir(dir) {
 
 async function moukeyAhk(action, args = []) {
     let ak = getAhk()
-    let pm = genPm()
 
     let ahkExePath = ak.ahkExePath
     let ahkScriptPath = null
@@ -86,20 +80,8 @@ async function moukeyAhk(action, args = []) {
     //execFile要求args為string
     let argsStr = scriptArgs.map((a) => String(a))
 
-    try {
-        let { stdout, stderr } = await execFileAsync(ahkExePath, ['/force', ahkScriptPath, ...argsStr])
-        if (stderr) {
-            pm.reject(stderr)
-        }
-        else {
-            pm.resolve(stdout)
-        }
-    }
-    catch (err) {
-        pm.reject(err)
-    }
-
-    return pm
+    //execProcess以execFile模式執行AHK, 非0結束碼或啟動失敗時reject (stderr不視為錯誤)
+    return execProcess(ahkExePath, ['/force', ahkScriptPath, ...argsStr], { mode: 'execFile' })
 }
 
 
