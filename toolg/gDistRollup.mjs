@@ -1,5 +1,4 @@
 import rollupFiles from 'w-package-tools/src/rollupFiles.mjs'
-import getFiles from 'w-package-tools/src/getFiles.mjs'
 
 
 let fdSrc = './src'
@@ -7,7 +6,7 @@ let fdTar = './dist'
 
 
 rollupFiles({
-    fns: getFiles(fdSrc),
+    fns: 'WMousekey.mjs',
     fdSrc,
     fdTar,
     nameDistType: 'kebabCase',
@@ -17,7 +16,7 @@ rollupFiles({
         'os': 'os',
         'child_process': 'child_process',
         'util': 'util',
-        '@u4/opencv4nodejs': '@u4/opencv4nodejs',
+        '@techstark/opencv-js': '@techstark/opencv-js',
         'screenshot-desktop': 'screenshot-desktop',
         'sharp': 'sharp',
     },
@@ -27,7 +26,7 @@ rollupFiles({
         'os',
         'child_process',
         'util',
-        '@u4/opencv4nodejs',
+        '@techstark/opencv-js',
         'screenshot-desktop',
         'sharp',
     ],

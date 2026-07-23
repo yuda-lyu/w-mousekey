@@ -1,7 +1,7 @@
 import size from 'lodash-es/size.js'
 import isestr from 'wsemi/src/isestr.mjs'
 import delay from 'wsemi/src/delay.mjs'
-import ckPic from 'w-mousekey/src/ckPic.mjs'
+import ckPic from './ckPic.mjs'
 
 
 let ckPics = async(names, opt = {}) => {

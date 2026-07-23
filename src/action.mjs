@@ -7,7 +7,8 @@ import cp from './compare.mjs'
 
 
 let action = (rtx, rty, rtw, rth, fpScreen) => {
-
+    console.log('待開發')
+    
     // let screenSave = async() => {
     //     await sc.screenSave(rtx, rty, rtw, rth, fpScreen)
     // }
