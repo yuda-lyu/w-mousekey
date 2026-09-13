@@ -4,7 +4,7 @@ import fs from 'fs'
 import mk from '../src/mousekey.mjs'
 import sc from '../src/screen.mjs'
 import cp from '../src/compare.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './helper.mjs'
+import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './tools/helper.mjs'
 
 describe('mousekey', function () {
     this.timeout(30000)

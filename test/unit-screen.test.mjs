@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import sharp from 'sharp'
 import sc from '../src/screen.mjs'
-import { imgsDir, checkScreen } from './helper.mjs'
+import { imgsDir, checkScreen } from './tools/helper.mjs'
 
 describe('screen', function () {
     this.timeout(30000)

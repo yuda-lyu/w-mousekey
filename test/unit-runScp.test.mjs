@@ -4,7 +4,7 @@ import fs from 'fs'
 import sc from '../src/screen.mjs'
 import cp from '../src/compare.mjs'
 import runScp from '../src/runScp.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './helper.mjs'
+import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './tools/helper.mjs'
 
 describe('runScp', function () {
     this.timeout(30000)

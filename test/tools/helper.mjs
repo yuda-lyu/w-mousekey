@@ -3,11 +3,12 @@ import path from 'path'
 import fs from 'fs'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
-import mk from '../src/mousekey.mjs'
-import getAhk from '../src/getAhk.mjs'
-import sc from '../src/screen.mjs'
+import mk from '../../src/mousekey.mjs'
+import getAhk from '../../src/getAhk.mjs'
+import sc from '../../src/screen.mjs'
 
-export const testDir = path.dirname(fileURLToPath(import.meta.url))
+export const toolsDir = path.dirname(fileURLToPath(import.meta.url))
+export const testDir = path.resolve(toolsDir, '..')
 export const imgsDir = path.join(testDir, 'imgs')
 
 export function fileUrl(file) {
