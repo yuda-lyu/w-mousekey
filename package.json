@@ -1,16 +1,16 @@
 {
   "name": "w-mousekey",
-  "version": "1.0.37",
+  "version": "1.0.38",
   "main": "dist/w-mousekey.umd.js",
   "dependencies": {
     "@techstark/opencv-js": "^4.12.0-release.1",
     "json5": "^2.2.3",
     "screenshot-desktop": "^1.15.4",
-    "sharp": "^0.35.3",
-    "wsemi": "^1.9.3"
+    "sharp": "^0.35.5",
+    "wsemi": "^1.9.9"
   },
   "devDependencies": {
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "w-package-tools": "^1.1.16"
   },
   "scripts": {
