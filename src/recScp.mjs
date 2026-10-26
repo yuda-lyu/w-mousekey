@@ -4,13 +4,13 @@ import split from 'lodash-es/split.js'
 import size from 'lodash-es/size.js'
 import cint from 'wsemi/src/cint.mjs'
 import fsWriteJson from 'wsemi/src/fsWriteJson.mjs'
-import getAhk from './getAhk.mjs'
+import { ensureAhk } from './getAhk.mjs'
 
-
-//getAhk
-let ak = getAhk()
 
 let recScp = async (fp) => {
+
+    //首次使用時自動下載AutoHotkey並驗證
+    let ak = await ensureAhk()
 
     let child = spawn(ak.ahkExePath, ['/force', ak.ahkScriptPathRecord])
 

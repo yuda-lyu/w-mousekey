@@ -1,5 +1,5 @@
 import execProcess from 'wsemi/src/execProcess.mjs'
-import getAhk from './getAhk.mjs'
+import { ensureAhk } from './getAhk.mjs'
 import ks from './keySyntax.mjs'
 
 
@@ -49,7 +49,8 @@ function normalizeDir(dir) {
 
 
 async function moukeyAhk(action, args = []) {
-    let ak = getAhk()
+    //首次使用時自動下載AutoHotkey並驗證
+    let ak = await ensureAhk()
 
     let ahkExePath = ak.ahkExePath
     let ahkScriptPath = null

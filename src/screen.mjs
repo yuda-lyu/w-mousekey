@@ -3,8 +3,8 @@ import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
 import screenshot from 'screenshot-desktop'
-import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import execProcess from 'wsemi/src/execProcess.mjs'
+import { ensureScreenCapture } from './getScreenCapture.mjs'
 
 
 let _initialized = false
@@ -24,31 +24,14 @@ function init(opt = {}) {
 }
 
 
-//取得截圖exe路徑, 比照getAhk作法: 開發時於套件根目錄, 被安裝為相依套件時於node_modules/w-mousekey/下
-function getScreenCaptureExe() {
-    let fdSrv = path.resolve()
-    let fnExe = 'screenCapture_1.3.2.exe'
-    let fpExeSrc = `${fdSrv}/_screenCapture/${fnExe}`
-    let fpExeNM = `${fdSrv}/node_modules/w-mousekey/_screenCapture/${fnExe}`
-    if (fsIsFile(fpExeSrc)) {
-        return fpExeSrc
-    }
-    else if (fsIsFile(fpExeNM)) {
-        return fpExeNM
-    }
-    else {
-        throw new Error('can not find screenCapture exe')
-    }
-}
-
-//Windows特化截圖: 直接以「完整路徑」spawn套件自帶的exe
+//Windows特化截圖: 直接以「完整路徑」spawn截圖exe(首次使用時自GitHub下載並驗證, 見getScreenCapture)
 //why: 當環境變數NoDefaultCurrentDirectoryInExePath=1時, screenshot-desktop的.bat最後一行
 //     以裸檔名(%~n0.exe)執行exe, cmd不會在當前目錄搜尋裸檔名而報「不是內部或外部命令」;
 //     exe本身功能正常(完整路徑可正常截圖), 故改以完整路徑直接執行即可繞過此限制
 async function getScreenWin32() {
 
     //resolve exe
-    let fpExe = getScreenCaptureExe()
+    let fpExe = await ensureScreenCapture()
 
     //output, 放在系統temp
     _shotSeq += 1

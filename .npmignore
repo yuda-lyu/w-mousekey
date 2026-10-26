@@ -1,0 +1,41 @@
+node_modules
+test/_tmp
+.agents
+CLAUDE*.md
+AGENTS*.md
+.env
+tmp
+.opencode
+.claude
+_tmp
+
+
+# 指引要求文件入 git 版控、不入 npm 包(2026-10-22)
+sgud
+
+
+# 執行檔與腳本檔不入 npm 包, 首次使用時自 GitHub 釘選提交下載並驗證 SHA-256(2026-10-26, 見 src/binManifest.mjs)
+# 先排整個資料夾, 再以副檔名兜底(日後任何位置新增此類檔也不會入包), npm 包內不得有 .exe .ahk .bat .cmd .chm
+/_autoHotkey/
+/_screenCapture/
+*.exe
+*.ahk
+*.bat
+*.cmd
+*.chm
+
+
+# 開發用檔不入 npm 包(以 / 開頭表示僅限套件根目錄, 避免誤傷 src/get*.mjs)
+# dist/(main 入口)與 src/(README 以 w-mousekey/src/*.mjs 匯入)須入包; docs/ 為 gh-pages 部署用 JSDoc 靜態站(npm run deploy), 不入包
+/g*.mjs
+/pic/
+/script*.json
+/script.txt
+/test/
+/docs/
+/toolg/
+/.editorconfig
+/.eslintignore
+/.eslintrc.js
+/.jsdoc
+/babel.config.js
