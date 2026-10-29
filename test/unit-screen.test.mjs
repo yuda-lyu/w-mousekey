@@ -4,18 +4,22 @@ import fs from 'fs'
 import sharp from 'sharp'
 import sc from '../src/screen.mjs'
 import { imgsDir, checkScreen } from './tools/helper.mjs'
+import { setBinEnv } from './tools/binEnv.mjs'
 
 describe('screen', function () {
     this.timeout(30000)
 
     let tmpFiles = []
+    let restoreBin = null
 
     before(async function () {
         fs.mkdirSync(imgsDir, { recursive: true })
+        restoreBin = setBinEnv('screen') //截圖exe取自repo bin/之本機鏡像, 不連網
         if (!(await checkScreen())) this.skip()
     })
 
     after(function () {
+        if (restoreBin) restoreBin()
         for (let fp of tmpFiles) {
             try { fs.unlinkSync(fp) }
             catch { /* ignore */ }

@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "pkg": "w-mousekey",
+  "mode": "pinned",
+  "repo": "yuda-lyu/w-mousekey",
+  "commit": "949e2af6fbc8ccfe53ff8addb88b61e379eb130b",
+  "files": [
+    {
+      "name": "AutoHotkey64.exe",
+      "path": "bin/AutoHotkey64.exe",
+      "sha256": "3880f9ec464dfe78c16bbd8b9f30560227154c292280337346a30c8fd92871fe",
+      "size": 1279488
+    },
+    {
+      "name": "screenCapture_1.3.2.exe",
+      "path": "bin/screenCapture_1.3.2.exe",
+      "sha256": "fa44d971ea48720b83b02e4b8bac58b716fca8c54ca4d9a8eef56242b73b73be",
+      "size": 12800
+    },
+    {
+      "name": "zclick.ahk",
+      "path": "bin/zclick.ahk",
+      "sha256": "831697bab3048e489e39a09b12c4173d1fdbb3d5481868302f2f97a64802a32b",
+      "size": 203
+    },
+    {
+      "name": "zdrag.ahk",
+      "path": "bin/zdrag.ahk",
+      "sha256": "0d2222611066bf927e3d97bcaa56620d6751f73c5003215ee42cbf38da5b0b90",
+      "size": 230
+    },
+    {
+      "name": "zrecord.ahk",
+      "path": "bin/zrecord.ahk",
+      "sha256": "1f8201131fc3022710b9d48b18f86878af468f538d1790080c13f1f43b3a63f7",
+      "size": 226
+    },
+    {
+      "name": "zsend.ahk",
+      "path": "bin/zsend.ahk",
+      "sha256": "564a69ee00c6f0ae7026f09b622228c03239ac740351987ec90ba8467504f1ae",
+      "size": 70
+    },
+    {
+      "name": "zsendcombo.ahk",
+      "path": "bin/zsendcombo.ahk",
+      "sha256": "3ec587435a271a34ee5de324f46e8cd7884a1b233b547998cfa8975130b44c44",
+      "size": 37
+    },
+    {
+      "name": "zwheel.ahk",
+      "path": "bin/zwheel.ahk",
+      "sha256": "3a7b64fcae3b2b56340fa0f819f57477601a18909d50c6f2d66de92d59e8004b",
+      "size": 321
+    }
+  ]
+}

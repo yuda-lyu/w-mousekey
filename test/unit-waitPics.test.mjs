@@ -5,19 +5,23 @@ import sharp from 'sharp'
 import sc from '../src/screen.mjs'
 import cp from '../src/compare.mjs'
 import waitPics from '../src/waitPics.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { setBinEnv } from './tools/binEnv.mjs'
 
 describe('waitPics', function () {
     this.timeout(60000)
 
     let browser, page
+    let restoreBin = null
     let picDir = path.join(testDir, '_pic_wp')
     let tmpDir = path.join(testDir, '_tmp_wp')
     let screenWidth, screenHeight
 
     before(async function () {
-        if (!checkAhk()) this.skip()
+        restoreBin = setBinEnv('waitPics') //執行檔取自repo bin/之本機鏡像, 不連網
+        if (!(await checkAhk())) this.skip()
         if (!(await checkScreen())) this.skip()
+        await assertDesktopVisible()
         await ensureImages()
         fs.mkdirSync(picDir, { recursive: true })
         fs.mkdirSync(tmpDir, { recursive: true })
@@ -47,6 +51,7 @@ describe('waitPics', function () {
 
     after(async function () {
         if (browser) await browser.close()
+        if (restoreBin) restoreBin()
         try {
             fs.rmSync(picDir, { recursive: true })
         }

@@ -4,15 +4,20 @@ import split from 'lodash-es/split.js'
 import size from 'lodash-es/size.js'
 import cint from 'wsemi/src/cint.mjs'
 import fsWriteJson from 'wsemi/src/fsWriteJson.mjs'
-import { ensureAhk } from './getAhk.mjs'
+import ensureBins from './ensureBins.mjs'
+
+
+//AutoHotkey v2執行檔與錄製腳本之名稱(須同bin/manifest.json之name)
+let AHK_EXE = 'AutoHotkey64.exe'
+let AHK_RECORD = 'zrecord.ahk'
 
 
 let recScp = async (fp) => {
 
-    //首次使用時自動下載AutoHotkey並驗證
-    let ak = await ensureAhk()
+    //首次使用時自動下載AutoHotkey與錄製腳本並驗證, 腳本以絕對路徑交給AutoHotkey
+    let bins = await ensureBins({ names: [AHK_EXE, AHK_RECORD] })
 
-    let child = spawn(ak.ahkExePath, ['/force', ak.ahkScriptPathRecord])
+    let child = spawn(bins[AHK_EXE], ['/force', bins[AHK_RECORD]])
 
     let steps = []
     let lastTime = Date.now()

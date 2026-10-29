@@ -4,8 +4,11 @@ import path from 'path'
 import sharp from 'sharp'
 import screenshot from 'screenshot-desktop'
 import execProcess from 'wsemi/src/execProcess.mjs'
-import { ensureScreenCapture } from './getScreenCapture.mjs'
+import ensureBins from './ensureBins.mjs'
 
+
+//Windows截圖exe名稱(須同bin/manifest.json之name)
+let SCREEN_EXE = 'screenCapture_1.3.2.exe'
 
 let _initialized = false
 let _externalScreenshot = null
@@ -24,14 +27,15 @@ function init(opt = {}) {
 }
 
 
-//Windows特化截圖: 直接以「完整路徑」spawn截圖exe(首次使用時自GitHub下載並驗證, 見getScreenCapture)
+//Windows特化截圖: 直接以「完整路徑」spawn截圖exe(首次使用時自GitHub下載並驗證, 見ensureBins)
 //why: 當環境變數NoDefaultCurrentDirectoryInExePath=1時, screenshot-desktop的.bat最後一行
 //     以裸檔名(%~n0.exe)執行exe, cmd不會在當前目錄搜尋裸檔名而報「不是內部或外部命令」;
 //     exe本身功能正常(完整路徑可正常截圖), 故改以完整路徑直接執行即可繞過此限制
 async function getScreenWin32() {
 
     //resolve exe
-    let fpExe = await ensureScreenCapture()
+    let bins = await ensureBins({ names: SCREEN_EXE })
+    let fpExe = bins[SCREEN_EXE]
 
     //output, 放在系統temp
     _shotSeq += 1

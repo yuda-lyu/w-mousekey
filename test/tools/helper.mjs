@@ -4,7 +4,7 @@ import fs from 'fs'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 import mk from '../../src/mousekey.mjs'
-import getAhk from '../../src/getAhk.mjs'
+import ensureBins from '../../src/ensureBins.mjs'
 import sc from '../../src/screen.mjs'
 
 export const toolsDir = path.dirname(fileURLToPath(import.meta.url))
@@ -15,23 +15,39 @@ export function fileUrl(file) {
     return 'file:///' + path.join(testDir, 'htmls', file).replace(/\\/g, '/')
 }
 
-export function checkAhk() {
-    try {
-        let ak = getAhk()
-        return fs.existsSync(ak.ahkExePath)
-    }
-    catch {
-        return false
-    }
+//須先以binEnv.mjs之setBinEnv設好本機鏡像(W_BIN_*), 否則會連網下載; 取得失敗(鏡像或清單有誤)直接拋錯而非略過測試, 以免掩蓋缺陷
+export async function checkAhk() {
+    let bins = await ensureBins({ names: 'AutoHotkey64.exe' })
+    return fs.existsSync(bins['AutoHotkey64.exe'])
 }
 
 export async function checkScreen() {
+    //Windows須先取得截圖exe: 鏡像或清單有誤時直接拋錯, 不當成無桌面而略過(下方catch只吞截圖本身之失敗)
+    if (process.platform === 'win32') {
+        await ensureBins({ names: 'screenCapture_1.3.2.exe' })
+    }
     try {
         await sc.screenFull()
         return true
     }
     catch {
         return false
+    }
+}
+
+//assertDesktopVisible, 需真實桌面之測試之前置: 桌面截圖全黑代表遠端桌面視窗已縮小、鎖定或工作階段未顯示, 此時模擬之滑鼠鍵盤送不到視窗
+//(2026-10-29 實驗: 縮小遠端桌面視窗後, 截圖1920x1080全黑, 輸入、點擊、滾輪等9案皆落空; 10-26、10-27兩次全套之9 failing同此)
+//以明確訊息失敗而非略過, 免出現多案看不出原因之失敗
+export async function assertDesktopVisible() {
+    if (process.platform !== 'win32') {
+        return
+    }
+    await ensureBins({ names: 'screenCapture_1.3.2.exe' })
+    let img = await sc.screenFull()
+    let { channels } = await sharp(img).stats()
+    let max = Math.max(...channels.slice(0, 3).map((c) => c.max))
+    if (max === 0) {
+        throw new Error('桌面截圖全黑: 遠端桌面視窗已縮小、鎖定或工作階段未顯示, 模擬之滑鼠鍵盤送不到視窗; 請保持遠端桌面視窗顯示(勿縮小)後再執行需真實桌面之測試')
     }
 }
 

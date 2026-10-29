@@ -23,53 +23,6 @@ npm i w-mousekey
 
 No native OpenCV installation required. Image matching uses `@techstark/opencv-js` (WebAssembly), which works on any Node.js version without compilation.
 
-### First use: AutoHotkey and screen capture executables are downloaded
-The npm package contains **no executables or script files** (no `.exe`, `.ahk`, `.bat`, `.cmd`, `.chm`) and has no `postinstall` script, so `npm i` downloads nothing. The helper files are fetched **on first use** (the first call of a `w-mousekey` mouse/keyboard function or of a `screen` function) and then reused:
-
-| Files | Used by |
-| --- | --- |
-| `AutoHotkey64.exe`, `zclick.ahk`, `zdrag.ahk`, `zsend.ahk`, `zsendcombo.ahk`, `zwheel.ahk`, `zrecord.ahk` (folder `_autoHotkey`) | `mousekey`, `recScp` |
-| `screenCapture_1.3.2.exe` (folder `_screenCapture`) | `screen` (Windows) |
-
-- **Source**: `https://raw.githubusercontent.com/yuda-lyu/w-mousekey/<commit>/_autoHotkey/<file>` and `.../_screenCapture/<file>`, pinned to one commit of this repository (the commit is fixed in [`src/binManifest.mjs`](src/binManifest.mjs), it is not a branch name).
-- **Verification**: every file has its SHA-256 and size hard-coded in `src/binManifest.mjs`. A download is written to a temporary name, verified, and only then atomically renamed to its final name. A file that does not match is deleted and an error is thrown; it is never used. Files already on disk are verified again each time before use, and a mismatching one is deleted and downloaded again.
-- **Location**: the per-user cache directory, not the package directory (which may be read-only, is wiped by every reinstall, and is duplicated per project): `%LOCALAPPDATA%\w-mousekey\<commit>\` on Windows, `$XDG_CACHE_HOME/w-mousekey/<commit>/` (default `~/.cache`) elsewhere. Set the environment variable `WMOUSEKEY_CACHE_DIR` to use another root.
-- **Concurrency**: several first calls at the same time, in one process or in several processes, are safe: each download uses its own temporary file, the file is verified before the rename, and an already complete file is never damaged.
-- **Failure**: if the download fails (offline, proxy, HTTP error) or the content does not match, an error is thrown whose message contains the URL and how to use your own files (below).
-- **Preparing in advance** (for example in a build step or before going offline):
-
-```js
-import { ensureAhk } from 'w-mousekey/src/getAhk.mjs'
-import { ensureScreenCapture } from 'w-mousekey/src/getScreenCapture.mjs'
-
-let ak = await ensureAhk() // { ahkExePath, ahkScriptPathClick, ... }
-let fpExe = await ensureScreenCapture() // path of the screen capture exe
-```
-
-The synchronous `getAhk()` (also exported by `WMousekey`) keeps working and never downloads: it returns the paths when the verified files are already available, otherwise it throws an error that tells you to call `ensureAhk()` first.
-
-### Using your own files (offline or restricted environments)
-Set environment variables before the first call. Files taken from these variables are used **as they are, without SHA-256 verification**, and nothing is downloaded. If a variable is set but its files are missing, an error is thrown instead of falling back to a download.
-
-| Environment variable | Value |
-| --- | --- |
-| `WMOUSEKEY_AHK_DIR` | A folder that contains `AutoHotkey64.exe` (AutoHotkey v2) and the six scripts `zclick.ahk`, `zdrag.ahk`, `zsend.ahk`, `zsendcombo.ahk`, `zwheel.ahk`, `zrecord.ahk`, i.e. a copy of the [`_autoHotkey`](https://github.com/yuda-lyu/w-mousekey/tree/1bb3f051465e7dc96416fd5eaf2f069e27514941/_autoHotkey) folder |
-| `WMOUSEKEY_SCREENCAPTURE_EXE` | Path of the screen capture exe, i.e. a copy of [`screenCapture_1.3.2.exe`](https://github.com/yuda-lyu/w-mousekey/tree/1bb3f051465e7dc96416fd5eaf2f069e27514941/_screenCapture) |
-
-```bash
-set WMOUSEKEY_AHK_DIR=D:\tools\w-mousekey\_autoHotkey
-set WMOUSEKEY_SCREENCAPTURE_EXE=D:\tools\w-mousekey\_screenCapture\screenCapture_1.3.2.exe
-```
-
-Offline: run the "Preparing in advance" snippet once on a machine with internet access and copy the cache directory (`%LOCALAPPDATA%\w-mousekey`) to the offline machine, or copy the two folders from the repository and set the variables above.
-
-When working inside a clone of this repository (current directory has this `package.json` and the `_autoHotkey`, `_screenCapture` folders), those folders are used directly and nothing is downloaded or verified.
-
-### Upgrade Notes
-- The npm package no longer contains `_autoHotkey/` and `_screenCapture/` (nor `docs/`, `test/` and other development files). The helper files are downloaded and verified on first use as described above, so the first call needs access to `raw.githubusercontent.com` unless you use your own files.
-- `${cwd}/node_modules/w-mousekey/_autoHotkey/` and any unrelated `${cwd}/_autoHotkey/` are no longer searched. Use `WMOUSEKEY_AHK_DIR` for a custom folder.
-- Public API is unchanged. New exports: `ensureAhk`, `getScreenCapture`, `ensureScreenCapture`.
-
 ### Example
 
 ```js
@@ -95,3 +48,47 @@ console.log(r) // { similarity, x, y, width, height, scale }
 let found = await ckPic('target', { threshold: 0.9 })
 console.log(found) // true or false
 ```
+
+## 外部執行檔
+
+本套件執行時需要下列外部執行檔與腳本,不含於 npm 包(npm 包內 `bin/` 只有清單 `manifest.json`):
+
+| 檔名 | 用途 | 來源 |
+|---|---|---|
+| `AutoHotkey64.exe` | 執行 AutoHotkey v2 腳本(`mousekey`、`recScp`、`runScp`) | 本套件 GitHub repo 之 `bin/`(釘選提交) |
+| `zclick.ahk`、`zdrag.ahk`、`zsend.ahk`、`zsendcombo.ahk`、`zwheel.ahk`、`zrecord.ahk` | 點擊、拖曳、輸入、組合鍵、滾輪、錄製之腳本 | 同上 |
+| `screenCapture_1.3.2.exe` | Windows 截圖(`screen`) | 同上 |
+
+AutoHotkey 以 GNU GPL v2 授權,授權全文見 repo 之 `licenses/AutoHotkey-license.txt`.
+
+- 首次使用到相關功能時自動下載(或預先呼叫本套件匯出之 `WMousekey.ensureBins()`),以 `bin/manifest.json` 所載之 SHA-256 與大小校驗後存於 `<套件根>/bin-cache/<sha256>/<檔名>`;之後自快取取得(亦校驗).安裝時不下載(無 `postinstall`).各功能只取所需之檔(如 `mouseClick` 只取 `AutoHotkey64.exe` 與 `zclick.ahk`),腳本以絕對路徑交給 AutoHotkey.
+- 下載網址釘在清單所載之 GitHub 提交(`https://raw.githubusercontent.com/yuda-lyu/w-mousekey/<提交>/bin/<檔名>`),不使用分支名;任何來源取得之檔皆以清單校驗,不符即不用.
+- 環境變數:
+  - `W_BIN_CACHE=<資料夾>`:快取改放 `<資料夾>/w-mousekey/`(套件所在之 `node_modules` 唯讀時使用,多套件可共用同一資料夾).
+  - `W_BIN_MIRROR=<資料夾或 http(s) 網址>`:內網鏡像,先找鏡像再連 GitHub;結構為 `<鏡像>/w-mousekey/<sha256>/<檔名>`.鏡像之檔同樣以清單校驗,不符即不用.
+  - `W_BIN_OFFLINE=1`:不連網,只用快取與鏡像;缺檔時錯誤(`E_OFFLINE_MISSING`)會列出缺哪些檔、sha256、大小與應放之完整路徑.
+- 離線部署:
+  1. 在可連網之電腦設 `W_BIN_CACHE=<空資料夾>`,呼叫 `WMousekey.ensureBins()` 一次(或使用到相關功能一次).
+  2. 把該資料夾整個帶到內網電腦,設 `W_BIN_MIRROR=<該資料夾>`(全離線時另設 `W_BIN_OFFLINE=1`).
+- 預先取得(部署前或建置時):
+
+```js
+import ensureBins from 'w-mousekey/src/ensureBins.mjs'
+
+let bins = await ensureBins() // { 'AutoHotkey64.exe': '<絕對路徑>', 'zclick.ahk': '<絕對路徑>', ... }
+let binsPart = await ensureBins({ names: ['AutoHotkey64.exe', 'zclick.ahk'] }) // 只取部分
+```
+
+- `WMousekey` 預設匯出(UMD)以屬性 `WMousekey.ensureBins` 提供同一函數.取不到時 reject 帶 `code` 之 Error(`E_OFFLINE_MISSING`、`E_HASH_MISMATCH`、`E_SIZE_MISMATCH`、`E_HTTP`、`E_NETWORK`、`E_TIMEOUT`、`E_MANIFEST`等,由 wsemi 之 `fsEnsureBins` 統一),訊息含檔名、來源與準備方法.
+- `bin/AutoHotkey64.exe` 為 AutoHotkey v2 官方發行檔(https://www.autohotkey.com/download/ )原樣,AutoHotkey 以 GNU GPL v2 授權(https://github.com/AutoHotkey/AutoHotkey/blob/v2.0/license.txt ).
+
+## Breaking changes
+
+本版不保留舊版相容(程式碼品質優先,破壞性變更由下游連帶修正):
+
+- 移除 `getAhk()`、`ensureAhk()`、`getScreenCapture()`、`ensureScreenCapture()`(原 `src/getAhk.mjs`、`src/getScreenCapture.mjs` 及 `WMousekey` 之同名屬性).改用 `ensureBins({ names })`,回傳 `{ [檔名]: 絕對路徑 }`;原回傳之 `ahkExePath`、`ahkScriptPathClick` 等欄位不再提供.
+- 移除環境變數 `WMOUSEKEY_AHK_DIR`、`WMOUSEKEY_SCREENCAPTURE_EXE`(自行指定、不校驗之檔)與 `WMOUSEKEY_CACHE_DIR`.改用 `W_BIN_MIRROR`(本地資料夾或內網 HTTP,其內之檔仍以清單校驗)、`W_BIN_OFFLINE`、`W_BIN_CACHE`.
+- 快取位置由 `%LOCALAPPDATA%\w-mousekey\<提交前 12 碼>\`(非 Windows 為 `$XDG_CACHE_HOME/w-mousekey/...`)改為 `<套件根>/bin-cache/<sha256>/<檔名>`(或 `W_BIN_CACHE`);舊快取夾不再使用,可自行刪除.
+- 在本 repo 內開發時不再直接使用 repo 內檔案(原 `_autoHotkey/`、`_screenCapture/` 已移除,執行檔改在 `bin/`),同樣經清單校驗後自快取取得;不想連網時以 `W_BIN_MIRROR` 指向含 `bin/` 實檔之鏡像.修改 `bin/` 內檔案後須依規格重新產生清單(`node toolg/genBinManifest.mjs --commit <含新檔之提交>`).
+- 原錯誤碼 `E_NOT_READY`、`E_OVERRIDE`、`E_BAD_FILE`、`E_NO_FETCH` 不再出現,改為上述 `fsEnsureBins` 之錯誤碼.
+- 公開入口 `mousekey`、`screen`、`recScp`、`runScp` 等之函數簽名不變.

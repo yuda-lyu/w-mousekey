@@ -1,7 +1,10 @@
 import execProcess from 'wsemi/src/execProcess.mjs'
-import { ensureAhk } from './getAhk.mjs'
+import ensureBins from './ensureBins.mjs'
 import ks from './keySyntax.mjs'
 
+
+//AutoHotkey v2執行檔名稱(須同bin/manifest.json之name)
+let AHK_EXE = 'AutoHotkey64.exe'
 
 let _initialized = false
 let _moukeyExternal = null
@@ -49,28 +52,24 @@ function normalizeDir(dir) {
 
 
 async function moukeyAhk(action, args = []) {
-    //首次使用時自動下載AutoHotkey並驗證
-    let ak = await ensureAhk()
-
-    let ahkExePath = ak.ahkExePath
-    let ahkScriptPath = null
+    let scriptName = null
     let scriptArgs = args
     switch (action) {
     case 'click':
-        ahkScriptPath = ak.ahkScriptPathClick
+        scriptName = 'zclick.ahk'
         break
     case 'drag':
-        ahkScriptPath = ak.ahkScriptPathDrag
+        scriptName = 'zdrag.ahk'
         break
     case 'scroll':
-        ahkScriptPath = ak.ahkScriptPathWheel
+        scriptName = 'zwheel.ahk'
         break
     case 'sendChar':
     case 'sendString':
-        ahkScriptPath = ak.ahkScriptPathSend
+        scriptName = 'zsend.ahk'
         break
     case 'sendCombo':
-        ahkScriptPath = ak.ahkScriptPathSendCombo
+        scriptName = 'zsendcombo.ahk'
         //中性語法翻譯為AHK Send語法
         scriptArgs = [ks.xdotoolToAhk(args[0])]
         break
@@ -78,11 +77,14 @@ async function moukeyAhk(action, args = []) {
         throw new Error(`unknown action: ${action}`)
     }
 
+    //首次使用時自動下載AutoHotkey與該動作之腳本並驗證, 各檔位於不同之內容定址資料夾, 腳本以絕對路徑交給AutoHotkey
+    let bins = await ensureBins({ names: [AHK_EXE, scriptName] })
+
     //execFile要求args為string
     let argsStr = scriptArgs.map((a) => String(a))
 
     //execProcess以execFile模式執行AHK, 非0結束碼或啟動失敗時reject (stderr不視為錯誤)
-    return execProcess(ahkExePath, ['/force', ahkScriptPath, ...argsStr], { mode: 'execFile' })
+    return execProcess(bins[AHK_EXE], ['/force', bins[scriptName], ...argsStr], { mode: 'execFile' })
 }
 
 

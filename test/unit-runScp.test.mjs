@@ -4,22 +4,27 @@ import fs from 'fs'
 import sc from '../src/screen.mjs'
 import cp from '../src/compare.mjs'
 import runScp from '../src/runScp.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { setBinEnv } from './tools/binEnv.mjs'
 
 describe('runScp', function () {
     this.timeout(30000)
 
     let browser, page
+    let restoreBin = null
 
     before(async function () {
-        if (!checkAhk()) this.skip()
+        restoreBin = setBinEnv('runScp') //執行檔取自repo bin/之本機鏡像, 不連網
+        if (!(await checkAhk())) this.skip()
         if (!(await checkScreen())) this.skip()
+        await assertDesktopVisible()
         await ensureImages()
         ;({ browser, page } = await launchBrowser())
     })
 
     after(async function () {
         if (browser) await browser.close()
+        if (restoreBin) restoreBin()
     })
 
     it('執行腳本點擊圖片按鈕', async function () {

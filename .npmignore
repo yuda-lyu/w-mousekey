@@ -14,10 +14,13 @@ _tmp
 sgud
 
 
-# 執行檔與腳本檔不入 npm 包, 首次使用時自 GitHub 釘選提交下載並驗證 SHA-256(2026-10-26, 見 src/binManifest.mjs)
-# 先排整個資料夾, 再以副檔名兜底(日後任何位置新增此類檔也不會入包), npm 包內不得有 .exe .ahk .bat .cmd .chm
-/_autoHotkey/
-/_screenCapture/
+# 執行檔與腳本檔不入 npm 包, 只有 bin/manifest.json 入包(釘選之校驗依據), 首次使用時依它自 GitHub 釘選提交下載並驗證 SHA-256(規格 S1, 見 src/ensureBins.mjs)
+# gitignore 語意下排除整個資料夾後無法再納入其中之檔, 故用 /bin/* 再以 ! 納入清單; 快取夾與測試暫存夾亦不入包
+/bin/*
+!/bin/manifest.json
+/bin-cache/
+/test/_tmp/
+# 再以副檔名兜底(日後任何位置新增此類檔也不會入包), npm 包內不得有 .exe .ahk .bat .cmd .chm
 *.exe
 *.ahk
 *.bat
@@ -35,6 +38,7 @@ sgud
 /docs/
 /toolg/
 /.editorconfig
+/.gitattributes
 /.eslintignore
 /.eslintrc.js
 /.jsdoc

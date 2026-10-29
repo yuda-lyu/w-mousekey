@@ -6,8 +6,7 @@ import ckPic from './ckPic.mjs'
 import ckPics from './ckPics.mjs'
 import waitPics from './waitPics.mjs'
 import keySyntax from './keySyntax.mjs'
-import getAhk, { ensureAhk } from './getAhk.mjs'
-import getScreenCapture, { ensureScreenCapture } from './getScreenCapture.mjs'
+import ensureBins from './ensureBins.mjs'
 import getSettings from './getSettings.mjs'
 import recScp from './recScp.mjs'
 import runScp from './runScp.mjs'
@@ -22,10 +21,7 @@ let WMousekey = {
     ckPics,
     waitPics,
     keySyntax,
-    getAhk,
-    ensureAhk,
-    getScreenCapture,
-    ensureScreenCapture,
+    ensureBins,
     getSettings,
     recScp,
     runScp,

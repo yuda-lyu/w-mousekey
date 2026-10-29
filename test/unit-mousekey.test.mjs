@@ -4,16 +4,20 @@ import fs from 'fs'
 import mk from '../src/mousekey.mjs'
 import sc from '../src/screen.mjs'
 import cp from '../src/compare.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { setBinEnv } from './tools/binEnv.mjs'
 
 describe('mousekey', function () {
     this.timeout(30000)
 
     let browser, page
     let screenOk = false
+    let restoreBin = null
 
     before(async function () {
-        if (!checkAhk()) this.skip()
+        restoreBin = setBinEnv('mousekey') //執行檔取自repo bin/之本機鏡像, 不連網
+        if (!(await checkAhk())) this.skip()
+        await assertDesktopVisible()
         screenOk = await checkScreen()
         await ensureImages()
         ;({ browser, page } = await launchBrowser())
@@ -21,6 +25,7 @@ describe('mousekey', function () {
 
     after(async function () {
         if (browser) await browser.close()
+        if (restoreBin) restoreBin()
     })
 
     it('sendString: 於焦點輸入框輸入文字', async function () {
