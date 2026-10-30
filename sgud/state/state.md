@@ -2,7 +2,7 @@
 
 本檔記載當前已開發功能之最新狀態(只記現況,過程寫入`sgud/exp/experience.md`),與`sgud/rule/rulebook.md`(藍圖)比對即知尚未做到者.接續工作時先讀本檔.過長時依功能類型拆為`state_<類型>.md`,本檔只留索引.
 
-最近更新:2026-10-30(tm-mousekey2,真實桌面負載試驗/變異/全套已跑).`package.json`之`version`仍為1.0.44(未動,新版由使用者發布).
+最近更新:2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
 
 ## 計時器相關之測試(規則R05,tm-mousekey)
 
@@ -13,11 +13,11 @@
 | `ckPics` | 不加`onTrace`(固定1500ms停頓非輪詢,無測試) | R05 | — |
 | 4個需真實桌面之測試檔 | 12項盤點項目(9案+2輔助站點+1 B類案,約30處固定延時)全改條件同步(`helper.mjs`之`waitPageReady/waitTargetOnScreen/waitTyped/waitSelectAll/waitText/waitEvents/focusInputByPhysicalClick`,`launchBrowser`注入事件紀錄器);`unit-waitPics`補點擊送達斷言.**真實桌面已實跑**(2026-10-30,`--lock-exclusive`,使用者未操作):新測試12 passing(約12 s),全套`npm test` 91 passing(19 s);2026-10-29舊版快照9案落空之原因為使用者當時正在操作VS Code、Windows前景鎖使Chrome無法到前景(見規則帳本〈需真實桌面之測試之前置〉) | R05 | `unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics`(`--lock-exclusive`) |
 | 替身桌面 | `test/tools/fakeDesktop.mjs`:無頭Chrome+Playwright模擬OS層輸入與桌面截圖,舊/新4個桌面測試檔不改即可實跑;2026-10-29於其上:舊/新測試皆12/12綠,變異(輸入不送達、送錯字元、右鍵當左鍵、雙擊單擊、滾輪反向、sendCombo不送出、ckPic不點擊、runScp不點擊)新測試全數抓到,非缺陷之時序變異(輸入延後1500ms)舊測試9/12轉紅、新測試0/12.**不取代真實桌面實跑**(真實桌面已於2026-10-30另跑,見下列) | R05 | 手動(`NODE_OPTIONS=--import=<fakeDesktop.mjs網址>`) |
-| 負載試驗器 | `test/tools/loadTrial.mjs`,`loadPreload.mjs`(複製自wsemi,加「測完不退出」偵測;`loadTrial`另有`--guard <腳本>`:每輪前先跑該腳本,離開碼非0即停止其後各輪、離開碼3) | R05 | 手動 |
+| 負載試驗器 | `test/tools/loadTrial.mjs`,`loadPreload.mjs`為**wsemi 1.9.33統一版**(2026-10-30,兩檔同時整份複製自`node_modules/wsemi/test/tools/`,位元組全等,不各自修改);環境變數`WSEMI_LT_PROBE/LAG/DIAG`(原`MKEY_LT_*`已廢);不退出之失敗鍵`(mocha did not exit)`;`--hang-sec`(別名`--exit-grace`,預設30)、`--run-max`(預設900秒,0為不限)、`--guard <腳本>`(每輪前先跑,離開碼非0即停止其後各輪、離開碼3)、`--diag` | R05,R06 | `unit-loadTrial`(8案,不需桌面,`--lock`);不需桌面之子集以`loadTrial`實跑一次(`--runs 3 --lag 400:1000`,38 passing×3,0失敗,每次自行退出) |
 | 真實桌面負載試驗(2026-10-30,每組5次,舊=`git archive HEAD`快照+舊測試,每輪前前景確認) | **8壓力行程**:舊2/5次有失敗(3個`after all` hook於30 s逾時+1個連鎖:hook逾時後遲到之`restoreBin`改回環境變數,後檔找不到截圖exe),新0/5(再補5次共0/10);舊+僅加hook逾時修補1/10次(整個`unit-mousekey`7案+`runScp`1案落空,該檔桌面截圖相似度0.53見不到目標圖),新0/10.**阻塞400:1000**、**重度阻塞1500:3000**:舊0/5、新0/5(依規格P7失敗率無從比較).平均單次耗時舊→新:cpu 78.7→29.0 s、lag 27.2→15.1 s、heavy 34.0→15.6 s;案耗時加總縮短約58~65%.新測試在負載下共20次(桌面檔;另無負載煙霧1次)+45次(onTrace測試,含較密阻塞300:500、700:1000)0失敗,每次mocha皆自行退出,壓力行程PID皆回驗已結束 | R05 | 手動(`run-all.sh`之作法見下) |
 | 真實桌面變異(2026-10-30) | 9項(輸入不送達、送錯字元、右鍵當左鍵、雙擊單擊、滾輪反向、sendCombo不送出、ckPic不點擊、runScp不點擊、時序變異「送達延後1500ms」)**新測試全數抓到**:舊/新失敗數 9/10、3/3、1/1、1/1、1/1、1/1、1/2、1/1;**非缺陷之時序變異**舊9/12轉紅、新0/12.舊測試對這些變異之涵蓋不退步,新測試對「輸入不送達」「ckPic不點擊」更強(補點擊送達斷言) | R05 | 手動 |
 
-重跑真實桌面(桌面可用時:工作階段未鎖定、未中斷,開始前 200 秒起至結束無人操作遠端桌面〔Windows 前景鎖〕):`node C:/opensrcOper/tools/quiet-run.mjs --lock-exclusive --name mousekey-desk -- node node_modules/mocha/bin/mocha.js --no-parallel test/unit-mousekey.test.mjs test/unit-runScp.test.mjs test/unit-ckPic.test.mjs test/unit-waitPics.test.mjs --timeout 180000`;負載試驗以`test/tools/loadTrial.mjs --out tmp/<名> --runs 5 --burners 8|--lag 400:1000|--lag 1500:3000 -- <同上mocha參數>`.舊版對照可用`git archive <提交> -o tmp/x.tar`解到`tmp/`副本(`--cwd`),`node_modules`沿父目錄解析;**舊版會盲目鍵入,須加`--guard <前景確認腳本>`**(前景確認腳本之作法:開有頭Chrome載入`test_mousekey.html`,用改造後helper的`waitPageReady`、`waitTargetOnScreen`見到目標圖後才實體點擊並確認mousedown與`#result`,見到目標前不送任何輸入;失敗即停,不得盲跑).長作業以`nohup`detached、單次`--lock-exclusive`內合併跑(`bash`腳本依序執行,最後一段`npm test`以不帶鎖旗標之`quiet-run`取摘要).
+重跑真實桌面(桌面可用時:工作階段未鎖定、未中斷,開始前 200 秒起至結束無人操作遠端桌面〔Windows 前景鎖〕):`node C:/opensrcOper/tools/quiet-run.mjs --lock-exclusive --name mousekey-desk -- node node_modules/mocha/bin/mocha.js --no-parallel test/unit-mousekey.test.mjs test/unit-runScp.test.mjs test/unit-ckPic.test.mjs test/unit-waitPics.test.mjs --timeout 180000`;負載試驗以`test/tools/loadTrial.mjs --out tmp/<名> --runs 5 --burners 8|--lag 400:1000|--lag 1500:3000 -- <同上mocha參數>`(單次mocha預設逾900秒即判不退出,逾15分之單次須加`--run-max 0`).舊版對照可用`git archive <提交> -o tmp/x.tar`解到`tmp/`副本(`--cwd`),`node_modules`沿父目錄解析;**舊版會盲目鍵入,須加`--guard <前景確認腳本>`**(前景確認腳本之作法:開有頭Chrome載入`test_mousekey.html`,用改造後helper的`waitPageReady`、`waitTargetOnScreen`見到目標圖後才實體點擊並確認mousedown與`#result`,見到目標前不送任何輸入;失敗即停,不得盲跑).長作業以`nohup`detached、單次`--lock-exclusive`內合併跑(`bash`腳本依序執行,最後一段`npm test`以不帶鎖旗標之`quiet-run`取摘要).
 
 ## 外部執行檔取得與npm包內容(規則R01~R04)
 
@@ -33,6 +33,8 @@
 | rollup | `toolg/gDistRollup.mjs`之external/globals補`url`,`stream`,`stream/promises`(原已有`os`,`crypto`,`child_process`);已以`tmp/`重建UMD驗證:`require()`所得物件含`ensureBins`,`ensureBins`之套件根為`dist/`上一層 | R02 | 手動(見經驗) |
 
 ## 驗證紀錄
+
+- 2026-10-30(a-mousekey,第184項):`unit-loadTrial`(R06,8案)主機`--lock`綠(約4 s);7項變異皆使對應案轉紅;`loadTrial`以本套件用法實跑不需桌面之子集(`unit-waitPicsTrace`,`unit-runScpTrace`,`unit-keySyntax`,`unit-compare`,`--runs 3 --lag 400:1000`)3輪皆38 passing、0失敗、每次自行退出;全套`npm test`經`sbx-run`(Windows沙箱,快照執行)99 passing(原91+8),0 failing,0 pending,耗時約2分.
 
 - 2026-10-29(bin-mousekey):新測試`api-ensureBins`(T3~T7與接線),`unit-binManifest`(T1,T2含提交位元組),`unit-npmPack`(更新)全綠;修前紅(HEAD之`src/`配新測試)、變異皆見任務報告`agent-out/bin-mousekey-修正報告.md`.舊`unit-binEnsure`(48),`unit-binConcurrent`(3),`api-ghDownload`(7),`unit-binManifest`(舊4)隨自寫程式刪除.
 - 真實執行(L5):本機鏡像供檔,快取路徑含中文,`mousekey.sendString('')`經真AutoHotkey成功,`screen.screenFullSave`得真PNG,快取內`AutoHotkey64.exe`可執行.

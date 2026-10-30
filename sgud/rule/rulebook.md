@@ -11,6 +11,7 @@
 | R03 | `bin/manifest.json`由`toolg/genBinManifest.mjs`產生,與repo`bin/`實檔及釘選提交內位元組一致 | `test/unit-binManifest.test.mjs`(T2,M4) |
 | R04 | 各公開入口只經`ensureBins`回傳之路徑啟動執行檔,不直連、不用舊路徑,交換檔不寫執行檔所在夾 | `test/api-ensureBins.test.mjs`(接線) |
 | R05 | 計時器相關之測試以事件同步(`opt.onTrace`+條件式等待+假時鐘),固定延時只作看門狗上限;桌面測試`--lock-exclusive`;規格見dspec | `test/unit-waitPicsTrace.test.mjs`,`test/unit-runScpTrace.test.mjs`,4個桌面測試檔 |
+| R06 | 負載執行器`test/tools/loadTrial.mjs`,`loadPreload.mjs`為wsemi統一版,兩檔同時整份複製自`node_modules/wsemi/test/tools/`、位元組全等、不各自修改;環境變數`WSEMI_LT_*` | `test/unit-loadTrial.test.mjs` |
 | 廢止 | 舊R02~R05(自寫下載/快取/校驗,並行保護,環境變數自行指定路徑)已隨自寫程式刪除 | — |
 
 ## R01 npm包不得含執行檔與腳本檔(2026-10-26,2026-10-29依制式規格S1修訂)
@@ -62,7 +63,7 @@ npm pack --dry-run --json --ignore-scripts | node -e "let j=JSON.parse(require('
 3. 被測物之間隔本身是規格者(`timeDelay`、腳本之 `delay`)用 `node:test` 之 `mock.timers`(只取代 `setTimeout`),斷言事件之虛擬時刻(推進 `ms-1` 不得進入下一步、再推進 1 才進入);防懸置之看門狗用模組載入時保存之真實計時器(`test/tools/traceRecorder.mjs`).
 4. 新測試對 `mk`、`sc` 以**property 替換並於 `after` 還原**(`mk.mouseClick`、`sc.screenSave`),不用 `mk.init`/`sc.init`(無法還原,會污染同一 mocha 行程內後續之真實 AHK 測試).
 5. 每個加 `onTrace` 之函數補五種回調案(未傳、紀錄器、拋錯、回傳 rejection、非函數;結果相同、無未處理之 rejection)與事件契約案(凍結、`this` 為 undefined、`type` 在列舉內、其餘欄位為原始值).
-6. 4 個需真實桌面之測試檔與全套 `npm test` 一律 `--lock-exclusive`(獨占螢幕與滑鼠),其餘單檔 `--lock`;負載試驗用 `test/tools/loadTrial.mjs`(複製自 wsemi,另加「json 報告寫出後逾 30 秒未退出即判『測完不退出』」與 `--guard <腳本>`:每輪前先跑該腳本,離開碼非 0 即停止其後各輪、離開碼 3,供會盲目鍵入之舊版快照於每輪前做前景確認,見〈需真實桌面之測試之前置〉)與 `loadPreload.mjs`.
+6. 4 個需真實桌面之測試檔與全套 `npm test` 一律 `--lock-exclusive`(獨占螢幕與滑鼠),其餘單檔 `--lock`;負載試驗用 `test/tools/loadTrial.mjs` 與 `loadPreload.mjs`(wsemi 統一版,見 R06;含「json 報告寫出後逾 `--hang-sec` 秒〔預設 30,別名 `--exit-grace`〕未退出即判『測完不退出』」與 `--guard <腳本>`:每輪前先跑該腳本,離開碼非 0 即停止其後各輪、離開碼 3,供會盲目鍵入之舊版快照於每輪前做前景確認,見〈需真實桌面之測試之前置〉).
 7. 真實桌面不可用時,以 `test/tools/fakeDesktop.mjs`(替身桌面預載模組,無頭 Chrome+Playwright 模擬 OS 層輸入與桌面截圖;用法與 `FD_MUT`/`FD_LATE_MS` 見檔頭)實跑 4 個桌面測試檔以驗證測試邏輯、變異與「非缺陷之時序變異」;**不得取代真實桌面實跑**(Playwright 輸入同步,與 AutoHotkey 經 OS 非同步送達不同).
 **盤點指令**(可重跑,輸出只應剩下列一行):
 
@@ -74,6 +75,16 @@ Grep pattern="waitForTimeout|setTimeout\(resolve|sleep\(|delay\(" path=test glob
 **站點全集與判準**(2026-10-29,12 項盤點項目[9 案+2 輔助站點+1 B 類案]全數已套):`unit-mousekey` 7 案(sendString,sendChar,mouseClick,mouseDblClick,mouseClick(right),mouseScroll,sendCombo)、`unit-runScp` 1 案、`unit-ckPic` 辨識並點擊案與 `before`、`unit-waitPics` 案與 `before`;不在範圍:`helper.mjs:calibrateViewport/toScreen/extractTargetFromScreen`(無呼叫者之既有死碼,含 `waitForTimeout`,不動,只提出).
 **對應測試**:`test/unit-waitPicsTrace.test.mjs`、`test/unit-runScpTrace.test.mjs`(事件與假時鐘,不需桌面);4 個桌面測試檔(條件同步).變異與負載試驗結果見任務報告 `agent-out/tm-mousekey-修正報告.md`.
 
+## R06 負載執行器為wsemi統一版(2026-10-30,第184項;wsemi>=1.9.33)
+
+**規則**:
+1. `test/tools/loadTrial.mjs` 與 `test/tools/loadPreload.mjs` **同時整份複製**自 `node_modules/wsemi/test/tools/`(或 wsemi repo `test/tools/`),位元組全等,**不各自修改**;兩檔之間以環境變數 `WSEMI_LT_PROBE`、`WSEMI_LT_LAG`、`WSEMI_LT_DIAG` 約定,只複製一檔會互不相容.需擴充者依全域設定 §5.2 回報 wsemi(單一版本),不在本套件改.升版 wsemi 後兩檔若有變,須同時重新複製(`unit-loadTrial` R06-1 會紅).
+2. 環境變數前綴為 `WSEMI_LT_*`(原 `MKEY_LT_*` 已廢,不留相容層).本套件測試中凡清除此前綴之處須保留並用新名(現僅 `unit-loadTrial` 之子行程環境清除 `NODE_OPTIONS` 與 `WSEMI_LT_*`).
+3. 選項:`--out`、`--runs`、`--burners`、`--lag L:P`(須 P>L)、`--burn-max`、`--cwd`、`--hang-sec`(別名 `--exit-grace`,預設 30)、`--run-max`(預設 **900 秒**,0 為不限;單次 mocha 逾 15 分者須明給 `--run-max 0` 或更大值)、`--diag`、`--guard`.離開碼:各輪皆無失敗且皆自行結束 0,guard 失敗 3,否則 1.
+4. 不退出之失敗鍵為 `(mocha did not exit)`(原 `(mocha did not exit by itself)` 已廢);摘要 `summary.json` 每輪另有 `hung`(原因字串)與 `noExit`.本套件現無程式解析此鍵(盤點:`test/`,`src/`,`toolg/` 皆無);日後依鍵解析者以此名為準.
+**盤點指令**(可重跑,輸出應為空):`git grep -n --untracked "MKEY_LT_\|did not exit by itself" -- . ":!sgud" ":!test/unit-loadTrial.test.mjs" ":!tmp"`(排除之 `unit-loadTrial` 以舊名斷言其不存在);位元組全等:`cmp node_modules/wsemi/test/tools/loadTrial.mjs test/tools/loadTrial.mjs`、`cmp node_modules/wsemi/test/tools/loadPreload.mjs test/tools/loadPreload.mjs`(輸出應為空).
+**測試**:`test/unit-loadTrial.test.mjs`(不需桌面,`--lock`,約 4 秒)R06-1~R06-8:位元組全等;前綴;通過案(子行程取得 `WSEMI_LT_PROBE/LAG`、無 `MKEY_LT_*`、預載模組寫出 probe、預設 hangSec 30/runMax 900);失敗案之鍵格式;測完不退出之鍵與 `--exit-grace`;guard 失敗離開碼 3;不合法選項拒收;`--burners` 之壓力行程 PID 回驗已終止.夾具為測試自寫於 `test/_tmp/loadTrial/` 並於 `after` 刪除.
+
 ## 改動範圍 → 測試檔對照(規範:依輪次只跑受影響者)
 
 | 改動 | 測試檔 |
@@ -83,6 +94,7 @@ Grep pattern="waitForTimeout|setTimeout\(resolve|sleep\(|delay\(" path=test glob
 | `src/mousekey.mjs`,`src/screen.mjs`,`src/recScp.mjs`,`src/WMousekey.mjs` | 上列 + `unit-screen`(截圖,無視窗)+ `unit-keySyntax`;`unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics`需可見Chrome與真實滑鼠,依守則17於本機有人使用時不跑;跑時須工作階段未鎖定、未中斷且使用者未在操作該畫面,視窗縮小可(須使用者端已設登錄),且測試開始前 200 秒起至結束,使用者不得操作遠端桌面(Windows 前景鎖 `HKCU\Control Panel\Desktop\ForegroundLockTimeout`=200000 ms:最後一次使用者輸入後 200 秒內,背景啟動之有頭 Chrome 無法取得前景、被當時之前景視窗遮住;超過則可,最大化之 VS Code 亦無妨)(見〈需真實桌面之測試之前置〉),一律`--lock-exclusive` |
 | `src/waitPics.mjs`,`src/runScp.mjs`,`src/ckPic.mjs` | `unit-waitPicsTrace`,`unit-runScpTrace`(不需桌面,`--lock`) + 4個桌面測試檔(`--lock-exclusive`) |
 | `test/tools/helper.mjs`,`test/tools/traceRecorder.mjs` | 4個桌面測試檔 + `unit-waitPicsTrace`,`unit-runScpTrace` |
+| `test/tools/loadTrial.mjs`,`test/tools/loadPreload.mjs`,wsemi升版 | `unit-loadTrial`(不需桌面,`--lock`);另以`loadTrial`實跑不需桌面之子集一次 |
 | `toolg/gDistRollup.mjs` | 以`tmp/`重建UMD載入驗證(`ensureBins`之套件根,external/globals含`url`,`crypto`,`stream`,`stream/promises`,`os`) |
 
 ## 測試環境變數

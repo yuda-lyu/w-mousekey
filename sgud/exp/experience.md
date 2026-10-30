@@ -2,6 +2,13 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 2026-10-30 負載執行器改用wsemi統一版(a-mousekey,第184項)
+
+- **來源與環境變數**:`test/tools/loadTrial.mjs`、`loadPreload.mjs` 自 `node_modules/wsemi/test/tools/`(wsemi 1.9.33 隨包發布 `test/tools/`)以 `cp` **同時**複製,`cmp`/sha256 驗位元組全等,不改一個字.環境變數 `MKEY_LT_*` → `WSEMI_LT_PROBE/LAG/DIAG`(取代下列 10-29 節「改 `MKEY_LT_LAG/PROBE`」之作法);原本本套件自加的「報告寫出後逾 30 秒未退出」即統一版的 `--hang-sec`(預設 30,別名 `--exit-grace`),失敗鍵改為 `(mocha did not exit)`;`--guard` 為統一版內建,離開碼 3 照舊(下列 10-30 節的 `fgcheck` 作法不變).新增 `--run-max`(預設 900 秒,舊版無上限;逾 15 分之單次須給 `--run-max 0`)與 `--diag`.
+- **本套件測試與 `src/` 原無任何依 `MKEY_LT_*` 或失敗鍵字串解析之處**(盤點見規則帳本 R06 之 git grep),故無須改既有測試;新增 `unit-loadTrial` 以真實 loadTrial 起真實 mocha 子行程(夾具 `test/_tmp/loadTrial/`)驗上述契約,8 案約 4 秒,不需桌面.
+- **測負載執行器的陷阱**:①`summary.runs[].lag.procs` 只計 `count>0` 的 probe;夾具(結束於 0.3 秒內)實測 `procs` 為 0(原因推測為事件迴圈延遲取樣數為 0,未另行驗證),預載模組是否載入要看 `probeK/probe-<pid>.json` 檔存在(結束時一定寫);②測完不退出的夾具用 `setInterval(()=>{},1000)`(未 unref)即可,mocha 11 預設不強制結束;`--exit-grace 2` 約 2.7 秒內判定;③測試內再起 loadTrial 時,子行程環境須清掉 `NODE_OPTIONS` 與 `WSEMI_LT_*`,否則外層若亦在負載試驗下,內層會疊加兩個預載與外層的 lag.
+- **變異驗證作法**(不動 repo 檔):在 `tmp/a-mousekey/mut/<id>/` 放 `test/unit-loadTrial.test.mjs`、`test/tools/{binEnv,loadTrial,loadPreload}.mjs` 副本與**真實複製**(非 junction)之假 `node_modules/wsemi/test/tools/` 兩檔,對副本套一處變異,`findMocha` 沿父目錄解析到本套件 `node_modules/mocha`.8 項(含無變異對照)結果:失敗鍵退回舊名、前綴退回 `MKEY_LT_`、去掉 `--exit-grace` 別名、guard 離開碼 3→1、`runMax` 預設 900→0、壓力行程不終止,皆使對應案轉紅;只改位元組(加註解)僅 R06-1 轉紅.
+
 ## 2026-10-30 真實桌面負載試驗/變異/全套(tm-mousekey2)
 
 - **條件更正(主控 10-30 查證)**:「使用者未操作」須為**測試開始前 200 秒起至結束,使用者不得操作遠端桌面(Windows 前景鎖 `HKCU\Control Panel\Desktop\ForegroundLockTimeout`=200000 ms:最後一次使用者輸入後 200 秒內,背景啟動之有頭 Chrome 無法取得前景、被當時之前景視窗遮住;超過則可,最大化之 VS Code 亦無妨)**.10-29 21:04 之 9/12 落空與 10-30 07:26 之 1/10 落空,皆為使用者正在操作 VS Code 之時;不必縮小 VS Code.已寫入規則帳本〈需真實桌面之測試之前置〉.診斷時看 `waitTargetOnScreen` 之最後相似度:≈0.5~0.7 且 `assertDesktopVisible` 通過 → 遮蔽/未繪製;全黑 → 工作階段不繪製.
@@ -22,7 +29,7 @@
 - 輸入框值之等待只用「等於 expected」(正向),不用「input 事件數」或「是否仍為 expected 之前綴」:全選取代時既有值 `hello` 非 `xx` 之前綴,前綴法會在尚未輸入時就誤判;事件數法假設每字元恰一個 input 事件.送錯/漏字元時於看門狗上限(15s)報出當下值.
 - mocha 同一行程內 `mk.init({moukey})`/`sc.init({screenshot})` 設定後無法還原(`_initialized` 只增不減),會污染後續真實 AHK 測試;單元測試改以 property 替換(`mk.mouseClick`、`sc.screenSave`)並於 `after` 還原,`ckPic`/`waitPics`/`runScp` 皆以 `mk.`/`sc.` 屬性呼叫故有效.影像比對(opencv)走真實實作,以 sharp 合成「灰底+目標圖」與「灰底+另一圖」兩張假螢幕.
 - 假時鐘(`node:test` 之 `mock.timers`,`apis:['setTimeout']`)用於 `timeDelay`/腳本 `delay`:`wait` 事件於 `trace()` 同步呼叫後才排入 `delay` 計時器,測試等到事件後須 `setImmediate` 讓出一次再 `tick`;opencv 須在假時鐘前已載入(先跑過一次辨識);防懸置看門狗用模組載入時保存之真實 `setTimeout`.`wsemi delay` 呼叫全域 `setTimeout`,`pmSeries` 無計時器.
-- 負載試驗器 `test/tools/loadTrial.mjs` 複製自 wsemi 並加「json 報告寫出後逾 30 秒仍未退出即殺行程樹並計失敗」;環境變數改 `MKEY_LT_LAG/PROBE`(避免與 wsemi 同名而互相干擾).`--cwd` 指向 `git archive` 解出之舊版快照,mocha 取自本套件 `node_modules`,快照在 `./tmp` 下故 `node_modules` 沿父目錄解析,**不需 junction**.
+- (2026-10-30 已被統一版取代:不再自改,環境變數為 `WSEMI_LT_*`,見最上節)負載試驗器 `test/tools/loadTrial.mjs` 複製自 wsemi 並加「json 報告寫出後逾 30 秒仍未退出即殺行程樹並計失敗」;環境變數改 `MKEY_LT_LAG/PROBE`(避免與 wsemi 同名而互相干擾).`--cwd` 指向 `git archive` 解出之舊版快照,mocha 取自本套件 `node_modules`,快照在 `./tmp` 下故 `node_modules` 沿父目錄解析,**不需 junction**.
 - 排鎖實況(10-29):共用鎖 `--lock` 等 6 分~23 分;獨占 `--lock-exclusive` 自 21:36 排隊至 23:40 才取得(2 小時 4 分),因兩槽被他套件之長時間 `npm test`(w-web-perm 自 21:08 持槽 2 小時 22 分)占住且佇列前有共用請求;4 小時預算大半耗在排鎖.**教訓**:需獨占之工作(負載試驗、全套)盡早排隊,並把所有需獨占者合併為單次取鎖(單一 bash 腳本內依序執行),取消重複之獨占請求(自己排隊之請求可自行終止,殘留號碼牌由後續等鎖者順手清除);排鎖期間只做不需測試之工作.
 - 替身桌面下舊測試於 8 壓力行程之純 CPU 負載:單次 `mousekey` 之 `after all` hook(`browser.close()`)逾 30s 逾時(`this.timeout(30000)` 適用 hook),為負載下關瀏覽器過慢,與同步方式無關(新測試之 `after` 與逾時相同,同樣有此風險);若真實桌面重現,應調高 hook 逾時或在 `after` 內以事件(`browser.on('disconnected')`)等關閉,而非只加大 timeout.
 - 排鎖:`--lock-exclusive` 須等所有槽空出,他套件持有之長時間 `--lock`(如開發伺服器 `runsrv.mjs`)會使獨占請求排在佇列首位而卡住其後所有人,實測 10-29 排隊逾 10 分鐘;排隊期間只做不需測試之工作(寫碼、文件、`node --check`、eslint).
