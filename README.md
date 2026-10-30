@@ -49,6 +49,27 @@ let found = await ckPic('target', { threshold: 0.9 })
 console.log(found) // true or false
 ```
 
+## 觀察回調 `opt.onTrace`
+
+`waitPics`(輪詢辨識圖片)與 `runScp`(依腳本執行點擊,含步間與重複延時)為計時器相關函數,提供選用之觀察回調 `opt.onTrace`,供測試與診斷以「事件發生」而非「等待毫秒」同步:
+
+```js
+import waitPics from 'w-mousekey/src/waitPics.mjs'
+import runScp from 'w-mousekey/src/runScp.mjs'
+
+let events = []
+let found = await waitPics('target', { numMax: 5, timeDelay: 500, onTrace: (e) => events.push(e) })
+// events: { type: 'round', i: 1, numMax: 5 }, { type: 'check', i: 1, name: 'target', ok: false }, { type: 'wait', i: 1, timeDelay: 500 }, ...
+
+await runScp('./script.json', { onTrace: (e) => console.log(e.type) })
+```
+
+- 事件為凍結物件 `{ type, ... }`,其餘欄位皆為原始值;回調同步呼叫、不帶接收者(`this` 為 `undefined`),其拋錯與回傳值(含 rejection)一律忽略,不影響被觀察函數之執行與結果;未傳或非函數時行為與未支援前相同.
+- `waitPics` 之 `type`:`round`(即將進行第 `i` 輪)、`check`(一張圖辨識完,含 `name`、`ok`)、`wait`(該輪皆失敗,即將等待 `timeDelay`)、`found`(辨識成功)、`giveUp`(全部輪數皆失敗)、`error`(`ckPic` 拋錯,隨後原樣向外拋出).
+- `runScp` 之 `type`:`empty`、`start`、`step`(即將點擊,含 `sp`、`rp`、`step`、`x`、`y`)、`stepWait`、`repeatWait`、`repeat`、`error`、`finish`.
+- 各 `type` 之完整欄位見 `src/waitPics.mjs`、`src/runScp.mjs` 之 JSDoc.`runScp` 新增第二參數 `opt`(選用),原 `runScp(inputFile)` 之呼叫不變.
+- 兩者皆經 wsemi 之 `getTrace`(`wsemi/src/getTrace.mjs`,需 wsemi >= 1.9.31)取得回調.
+
 ## 外部執行檔
 
 本套件執行時需要下列外部執行檔與腳本,不含於 npm 包(npm 包內 `bin/` 只有清單 `manifest.json`):

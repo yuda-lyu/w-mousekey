@@ -2,11 +2,11 @@ import assert from 'assert'
 import path from 'path'
 import fs from 'fs'
 import mk from '../src/mousekey.mjs'
-import sc from '../src/screen.mjs'
-import cp from '../src/compare.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages, waitPageReady, waitTargetOnScreen, waitText, waitTyped, waitSelectAll, focusInputByPhysicalClick } from './tools/helper.mjs'
 import { setBinEnv } from './tools/binEnv.mjs'
 
+//同步原則(規格: 計時器相關之測試以事件同步, 不以延時偵測): 動作後等可觀察之結果(輸入框值、元素文字、事件計數、桌面截圖見到目標), 不以固定延時作同步手段;
+//helper.mjs之WATCHDOG_MS僅為防懸置之上限, 條件成立即返回
 describe('mousekey', function () {
     this.timeout(30000)
 
@@ -24,40 +24,30 @@ describe('mousekey', function () {
     })
 
     after(async function () {
+        this.timeout(120000) //僅防懸置之上限: 滿載時關閉有頭Chrome可能逾describe之逾時(舊版於8壓力行程下2/5次after hook逾時30s)
         if (browser) await browser.close()
         if (restoreBin) restoreBin()
     })
 
     it('sendString: 於焦點輸入框輸入文字', async function () {
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(300)
+        await waitPageReady(page)
 
-        //用AHK物理點擊視窗中央, 確保OS焦點在瀏覽器
-        let center = await page.evaluate(() => ({
-            x: Math.round(window.screenX + window.outerWidth / 2),
-            y: Math.round(window.screenY + window.outerHeight / 2),
-        }))
-        await mk.mouseClick(center.x, center.y)
-        await page.waitForTimeout(300)
-
-        //再用Playwright聚焦input
-        await page.click('#input1')
-        await page.waitForTimeout(300)
+        //用AHK物理點擊視窗中央, 確保OS焦點在瀏覽器, 再用Playwright聚焦input
+        await focusInputByPhysicalClick(page, '#input1', mk)
 
         await mk.sendString('hello')
-        await page.waitForTimeout(500)
 
-        let val = await page.$eval('#input1', (el) => el.value)
+        //spec: sendString於焦點輸入框輸入文字 -> 輸入框值為'hello'
+        let val = await waitTyped(page, '#input1', 'hello')
         assert.strictEqual(val, 'hello', `預期'hello', 實際'${val}'`)
     })
 
     it('sendChar: 於焦點輸入框輸入單字元', async function () {
         await mk.sendChar('Z')
-        await page.waitForTimeout(300)
 
-        let val = await page.$eval('#input1', (el) => el.value)
+        //spec: sendChar於焦點輸入框輸入單字元 -> 於既有'hello'後接'Z'
+        let val = await waitTyped(page, '#input1', 'helloZ')
         assert.strictEqual(val, 'helloZ', `預期'helloZ', 實際'${val}'`)
     })
 
@@ -65,19 +55,14 @@ describe('mousekey', function () {
         if (!screenOk) this.skip()
 
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
         let tmpDir = path.join(testDir, '_tmp_mk')
         fs.mkdirSync(tmpDir, { recursive: true })
 
-        //全螢幕截圖, 用raw target找btn_a位置, 裁切螢幕版本
+        //全螢幕截圖, 用raw target找btn_a位置; 桌面截圖須見到目標才算頁面已繪製於桌面
         let screenPath = path.join(tmpDir, 'screen.png')
-        await sc.screenFullSave(screenPath)
-
-        let rawTarget = path.join(imgsDir, 'target.png')
-        let match = await cp.calcSimilarity(rawTarget, screenPath, 1)
+        let match = await waitTargetOnScreen(screenPath)
         console.log('      match: sim=%s pos=(%d,%d)', match.similarity.toFixed(4), match.x, match.y)
 
         let cx = match.x + match.width / 2
@@ -85,9 +70,9 @@ describe('mousekey', function () {
 
         //mouseClick點擊全螢幕座標
         await mk.mouseClick(cx, cy)
-        await page.waitForTimeout(500)
 
-        let text = await page.textContent('#result')
+        //spec: mouseClick點擊圖片 -> click事件使#result為'CLICKED'
+        let text = await waitText(page, '#result', 'CLICKED')
         assert.strictEqual(text, 'CLICKED', `預期'CLICKED', 實際'${text}'`)
 
         fs.rmSync(tmpDir, { recursive: true })
@@ -105,24 +90,20 @@ describe('mousekey', function () {
         if (!screenOk) this.skip()
 
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
         let tmpDir = path.join(testDir, '_tmp_mk')
         fs.mkdirSync(tmpDir, { recursive: true })
 
         let screenPath = path.join(tmpDir, 'screen.png')
-        await sc.screenFullSave(screenPath)
-        let rawTarget = path.join(imgsDir, 'target.png')
-        let match = await cp.calcSimilarity(rawTarget, screenPath, 1)
+        let match = await waitTargetOnScreen(screenPath)
         let cx = match.x + match.width / 2
         let cy = match.y + match.height / 2
 
         await mk.mouseDblClick(cx, cy)
-        await page.waitForTimeout(500)
 
-        let text = await page.textContent('#result')
+        //spec: mouseDblClick雙擊圖片 -> dblclick事件使#result為'DBLCLICKED'(雙擊先經兩次click事件使其暫為'CLICKED', 故等最終文字)
+        let text = await waitText(page, '#result', 'DBLCLICKED')
         assert.strictEqual(text, 'DBLCLICKED', `預期'DBLCLICKED', 實際'${text}'`)
 
         fs.rmSync(tmpDir, { recursive: true })
@@ -132,24 +113,20 @@ describe('mousekey', function () {
         if (!screenOk) this.skip()
 
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
         let tmpDir = path.join(testDir, '_tmp_mk')
         fs.mkdirSync(tmpDir, { recursive: true })
 
         let screenPath = path.join(tmpDir, 'screen.png')
-        await sc.screenFullSave(screenPath)
-        let rawTarget = path.join(imgsDir, 'target.png')
-        let match = await cp.calcSimilarity(rawTarget, screenPath, 1)
+        let match = await waitTargetOnScreen(screenPath)
         let cx = match.x + match.width / 2
         let cy = match.y + match.height / 2
 
         await mk.mouseClick(cx, cy, 'right')
-        await page.waitForTimeout(500)
 
-        let text = await page.textContent('#result')
+        //spec: mouseClick右鍵 -> contextmenu事件使#result為'RIGHTCLICKED'
+        let text = await waitText(page, '#result', 'RIGHTCLICKED')
         assert.strictEqual(text, 'RIGHTCLICKED', `預期'RIGHTCLICKED', 實際'${text}'`)
 
         fs.rmSync(tmpDir, { recursive: true })
@@ -159,9 +136,7 @@ describe('mousekey', function () {
         if (!screenOk) this.skip()
 
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
         let center = await page.evaluate(() => ({
             x: Math.round(window.screenX + window.outerWidth / 2),
@@ -169,41 +144,33 @@ describe('mousekey', function () {
         }))
 
         await mk.mouseScroll(center.x, center.y, 'down', 3)
-        await page.waitForTimeout(500)
 
-        let text = await page.textContent('#wheelInfo')
+        //spec: mouseScroll向下滾動 -> wheel事件之deltaY>0使#wheelInfo為'DOWN'
+        let text = await waitText(page, '#wheelInfo', 'DOWN')
         assert.strictEqual(text, 'DOWN', `預期'DOWN', 實際'${text}'`)
     })
 
     it('sendCombo: ctrl+a全選後取代內容', async function () {
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(300)
+        await waitPageReady(page)
 
         //物理點擊+focus input
-        let center = await page.evaluate(() => ({
-            x: Math.round(window.screenX + window.outerWidth / 2),
-            y: Math.round(window.screenY + window.outerHeight / 2),
-        }))
-        await mk.mouseClick(center.x, center.y)
-        await page.waitForTimeout(300)
-        await page.click('#input1')
-        await page.waitForTimeout(300)
+        await focusInputByPhysicalClick(page, '#input1', mk)
 
         //輸入hello
         await mk.sendString('hello')
-        await page.waitForTimeout(300)
+        let val1 = await waitTyped(page, '#input1', 'hello')
+        assert.strictEqual(val1, 'hello', `預期先輸入'hello', 實際'${val1}'`)
 
-        //ctrl+a全選
+        //ctrl+a全選: 以輸入框內容被全選為可觀察結果
         await mk.sendCombo('ctrl+a')
-        await page.waitForTimeout(300)
+        await waitSelectAll(page, '#input1')
 
         //取代為xx
         await mk.sendString('xx')
-        await page.waitForTimeout(500)
 
-        let val = await page.$eval('#input1', (el) => el.value)
+        //spec: sendCombo ctrl+a全選後再輸入 -> 取代原內容而非接續
+        let val = await waitTyped(page, '#input1', 'xx')
         assert.strictEqual(val, 'xx', `預期'xx'(全選後取代), 實際'${val}'`)
     })
 })

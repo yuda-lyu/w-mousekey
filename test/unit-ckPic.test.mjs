@@ -2,12 +2,11 @@ import assert from 'assert'
 import path from 'path'
 import fs from 'fs'
 import sharp from 'sharp'
-import sc from '../src/screen.mjs'
-import cp from '../src/compare.mjs'
 import ckPic from '../src/ckPic.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages, waitPageReady, waitTargetOnScreen, waitText } from './tools/helper.mjs'
 import { setBinEnv } from './tools/binEnv.mjs'
 
+//同步原則: 載入後等頁面就緒並以桌面截圖見到目標為條件(辨識成功才進行), 點擊後等#result之文字, 不以固定延時作同步手段
 describe('ckPic', function () {
     this.timeout(60000)
 
@@ -30,21 +29,15 @@ describe('ckPic', function () {
 
         //開啟test.html
         await page.goto(fileUrl('test_compare.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
-        //從全螢幕截圖裁切btn_a作為target(與ckPic同一截圖來源)
+        //從全螢幕截圖裁切btn_a作為target(與ckPic同一截圖來源); 桌面截圖須見到目標(辨識成功)才裁切
         let fullPath = path.join(tmpDir, '_fullscreen.png')
-        await sc.screenFullSave(fullPath)
+        let match = await waitTargetOnScreen(fullPath)
+        console.log('    raw target match: sim=%s pos=(%d,%d)', match.similarity.toFixed(4), match.x, match.y)
         let fullMeta = await sharp(fullPath).metadata()
         screenWidth = fullMeta.width
         screenHeight = fullMeta.height
-
-        //用raw target找btn_a在全螢幕的位置, 再裁切螢幕版本
-        let rawTarget = path.join(imgsDir, 'target.png')
-        let match = await cp.calcSimilarity(rawTarget, fullPath, 1)
-        console.log('    raw target match: sim=%s pos=(%d,%d)', match.similarity.toFixed(4), match.x, match.y)
 
         await sharp(fullPath)
             .extract({ left: match.x, top: match.y, width: match.width, height: match.height })
@@ -52,6 +45,7 @@ describe('ckPic', function () {
     })
 
     after(async function () {
+        this.timeout(120000) //僅防懸置之上限: 滿載時關閉有頭Chrome可能逾describe之逾時
         if (browser) await browser.close()
         if (restoreBin) restoreBin()
         try {
@@ -80,11 +74,10 @@ describe('ckPic', function () {
     })
 
     it('辨識目標圖並點擊, 結果文字為A', async function () {
-        //reload乾淨狀態
+        //reload乾淨狀態, 等頁面就緒且桌面見到目標圖
         await page.goto(fileUrl('test_compare.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
+        await waitTargetOnScreen(path.join(tmpDir, '_ready.png'))
 
         let result = await ckPic('target', {
             fdTar: picDir,
@@ -97,10 +90,10 @@ describe('ckPic', function () {
             withClick: true,
         })
 
-        await page.waitForTimeout(1000)
         assert.strictEqual(result, true, 'ckPic應回傳true')
 
-        let text = await page.textContent('#result')
+        //spec: ckPic withClick辨識成功後點擊圖片中心 -> 圖片A之click使#result為'A'
+        let text = await waitText(page, '#result', 'A')
         assert.strictEqual(text, 'A', '應點擊到圖片A')
     })
 })

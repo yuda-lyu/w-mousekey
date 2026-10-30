@@ -1,12 +1,12 @@
 import assert from 'assert'
 import path from 'path'
 import fs from 'fs'
-import sc from '../src/screen.mjs'
-import cp from '../src/compare.mjs'
 import runScp from '../src/runScp.mjs'
-import { testDir, imgsDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages } from './tools/helper.mjs'
+import { testDir, fileUrl, checkAhk, checkScreen, assertDesktopVisible, launchBrowser, ensureImages, waitPageReady, waitTargetOnScreen, waitText } from './tools/helper.mjs'
 import { setBinEnv } from './tools/binEnv.mjs'
 
+//同步原則: 載入後等頁面就緒並以桌面截圖見到目標為條件, 腳本執行後等#result之文字, 不以固定延時作同步手段;
+//runScp自身之步間延時、重複與錯誤處理見unit-runScpTrace.test.mjs(以onTrace事件同步)
 describe('runScp', function () {
     this.timeout(30000)
 
@@ -23,25 +23,21 @@ describe('runScp', function () {
     })
 
     after(async function () {
+        this.timeout(120000) //僅防懸置之上限: 滿載時關閉有頭Chrome可能逾describe之逾時(舊版於8壓力行程下after hook逾時30s)
         if (browser) await browser.close()
         if (restoreBin) restoreBin()
     })
 
     it('執行腳本點擊圖片按鈕', async function () {
         await page.goto(fileUrl('test_mousekey.html'))
-        await page.waitForLoadState('load')
-        await page.bringToFront()
-        await page.waitForTimeout(500)
+        await waitPageReady(page)
 
         let tmpDir = path.join(testDir, '_tmp_rs')
         fs.mkdirSync(tmpDir, { recursive: true })
 
-        //全螢幕截圖找btn_a位置
+        //全螢幕截圖找btn_a位置; 桌面截圖須見到目標才算頁面已繪製於桌面
         let screenPath = path.join(tmpDir, 'screen.png')
-        await sc.screenFullSave(screenPath)
-
-        let rawTarget = path.join(imgsDir, 'target.png')
-        let match = await cp.calcSimilarity(rawTarget, screenPath, 1)
+        let match = await waitTargetOnScreen(screenPath)
         let sx = Math.round(match.x + match.width / 2)
         let sy = Math.round(match.y + match.height / 2)
 
@@ -53,9 +49,9 @@ describe('runScp', function () {
         }))
 
         await runScp(scriptPath)
-        await page.waitForTimeout(500)
 
-        let text = await page.textContent('#result')
+        //spec: runScp依腳本步驟點擊座標 -> 圖片按鈕之click使#result為'CLICKED'
+        let text = await waitText(page, '#result', 'CLICKED')
         assert.strictEqual(text, 'CLICKED', '腳本應點擊到圖片按鈕')
 
         fs.unlinkSync(scriptPath)

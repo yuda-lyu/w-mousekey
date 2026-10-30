@@ -2,7 +2,22 @@
 
 本檔記載當前已開發功能之最新狀態(只記現況,過程寫入`sgud/exp/experience.md`),與`sgud/rule/rulebook.md`(藍圖)比對即知尚未做到者.接續工作時先讀本檔.過長時依功能類型拆為`state_<類型>.md`,本檔只留索引.
 
-最近更新:2026-10-29(bin-mousekey).`package.json`之`version`仍為1.0.43(未動,新版由使用者發布).
+最近更新:2026-10-30(tm-mousekey2,真實桌面負載試驗/變異/全套已跑).`package.json`之`version`仍為1.0.44(未動,新版由使用者發布).
+
+## 計時器相關之測試(規則R05,tm-mousekey)
+
+| 項目 | 現況 | 規則 | 測試 |
+| --- | --- | --- | --- |
+| `waitPics` | 加選用`opt.onTrace`(事件`round/check/wait/found/giveUp/error`,JSDoc與README已列);未傳回調時行為不變 | R05 | `unit-waitPicsTrace`(輪次、等待間隔以假時鐘驗證、五種回調、事件契約)9案 |
+| `runScp` | 加第2參數`opt`(選用)與`opt.onTrace`(事件`empty/start/step/stepWait/repeatWait/repeat/error/finish`);`runScp(inputFile)`呼叫不變 | R05 | `unit-runScpTrace`(步間/重複延時以假時鐘驗證、錯誤路徑、無限重複、五種回調、事件契約)10案 |
+| `ckPics` | 不加`onTrace`(固定1500ms停頓非輪詢,無測試) | R05 | — |
+| 4個需真實桌面之測試檔 | 12項盤點項目(9案+2輔助站點+1 B類案,約30處固定延時)全改條件同步(`helper.mjs`之`waitPageReady/waitTargetOnScreen/waitTyped/waitSelectAll/waitText/waitEvents/focusInputByPhysicalClick`,`launchBrowser`注入事件紀錄器);`unit-waitPics`補點擊送達斷言.**真實桌面已實跑**(2026-10-30,`--lock-exclusive`,使用者未操作):新測試12 passing(約12 s),全套`npm test` 91 passing(19 s);2026-10-29舊版快照9案落空之原因為使用者當時正在操作VS Code、Windows前景鎖使Chrome無法到前景(見規則帳本〈需真實桌面之測試之前置〉) | R05 | `unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics`(`--lock-exclusive`) |
+| 替身桌面 | `test/tools/fakeDesktop.mjs`:無頭Chrome+Playwright模擬OS層輸入與桌面截圖,舊/新4個桌面測試檔不改即可實跑;2026-10-29於其上:舊/新測試皆12/12綠,變異(輸入不送達、送錯字元、右鍵當左鍵、雙擊單擊、滾輪反向、sendCombo不送出、ckPic不點擊、runScp不點擊)新測試全數抓到,非缺陷之時序變異(輸入延後1500ms)舊測試9/12轉紅、新測試0/12.**不取代真實桌面實跑**(真實桌面已於2026-10-30另跑,見下列) | R05 | 手動(`NODE_OPTIONS=--import=<fakeDesktop.mjs網址>`) |
+| 負載試驗器 | `test/tools/loadTrial.mjs`,`loadPreload.mjs`(複製自wsemi,加「測完不退出」偵測;`loadTrial`另有`--guard <腳本>`:每輪前先跑該腳本,離開碼非0即停止其後各輪、離開碼3) | R05 | 手動 |
+| 真實桌面負載試驗(2026-10-30,每組5次,舊=`git archive HEAD`快照+舊測試,每輪前前景確認) | **8壓力行程**:舊2/5次有失敗(3個`after all` hook於30 s逾時+1個連鎖:hook逾時後遲到之`restoreBin`改回環境變數,後檔找不到截圖exe),新0/5(再補5次共0/10);舊+僅加hook逾時修補1/10次(整個`unit-mousekey`7案+`runScp`1案落空,該檔桌面截圖相似度0.53見不到目標圖),新0/10.**阻塞400:1000**、**重度阻塞1500:3000**:舊0/5、新0/5(依規格P7失敗率無從比較).平均單次耗時舊→新:cpu 78.7→29.0 s、lag 27.2→15.1 s、heavy 34.0→15.6 s;案耗時加總縮短約58~65%.新測試在負載下共20次(桌面檔;另無負載煙霧1次)+45次(onTrace測試,含較密阻塞300:500、700:1000)0失敗,每次mocha皆自行退出,壓力行程PID皆回驗已結束 | R05 | 手動(`run-all.sh`之作法見下) |
+| 真實桌面變異(2026-10-30) | 9項(輸入不送達、送錯字元、右鍵當左鍵、雙擊單擊、滾輪反向、sendCombo不送出、ckPic不點擊、runScp不點擊、時序變異「送達延後1500ms」)**新測試全數抓到**:舊/新失敗數 9/10、3/3、1/1、1/1、1/1、1/1、1/2、1/1;**非缺陷之時序變異**舊9/12轉紅、新0/12.舊測試對這些變異之涵蓋不退步,新測試對「輸入不送達」「ckPic不點擊」更強(補點擊送達斷言) | R05 | 手動 |
+
+重跑真實桌面(桌面可用時:工作階段未鎖定、未中斷,開始前 200 秒起至結束無人操作遠端桌面〔Windows 前景鎖〕):`node C:/opensrcOper/tools/quiet-run.mjs --lock-exclusive --name mousekey-desk -- node node_modules/mocha/bin/mocha.js --no-parallel test/unit-mousekey.test.mjs test/unit-runScp.test.mjs test/unit-ckPic.test.mjs test/unit-waitPics.test.mjs --timeout 180000`;負載試驗以`test/tools/loadTrial.mjs --out tmp/<名> --runs 5 --burners 8|--lag 400:1000|--lag 1500:3000 -- <同上mocha參數>`.舊版對照可用`git archive <提交> -o tmp/x.tar`解到`tmp/`副本(`--cwd`),`node_modules`沿父目錄解析;**舊版會盲目鍵入,須加`--guard <前景確認腳本>`**(前景確認腳本之作法:開有頭Chrome載入`test_mousekey.html`,用改造後helper的`waitPageReady`、`waitTargetOnScreen`見到目標圖後才實體點擊並確認mousedown與`#result`,見到目標前不送任何輸入;失敗即停,不得盲跑).長作業以`nohup`detached、單次`--lock-exclusive`內合併跑(`bash`腳本依序執行,最後一段`npm test`以不帶鎖旗標之`quiet-run`取摘要).
 
 ## 外部執行檔取得與npm包內容(規則R01~R04)
 
@@ -26,7 +41,8 @@
 
 - `dist/w-mousekey.umd.js`仍是舊建置(內含舊的下載邏輯),發布時自動重新產製;已以相同設定建置到`tmp/`驗證新模組可打包、可載入.
 - `docs/`(JSDoc靜態站)未重新產製,仍是舊內容,屬`npm run deploy`之發布流程.
-- 需可見Chrome與真實滑鼠之測試(`unit-mousekey`,`unit-ckPic`,`unit-runScp`,`unit-waitPics`)已改用本機鏡像取得執行檔,但因守則17(本機有人使用時不開可見視窗/不動滑鼠)本輪未跑,由主控於末輪跑全套.
+- 需可見Chrome與真實滑鼠之測試(`unit-mousekey`,`unit-ckPic`,`unit-runScp`,`unit-waitPics`)已於2026-10-30在真實桌面實跑(全套91 passing);跑時須自開始前200秒起至結束無人操作遠端桌面(Windows前景鎖;見規則帳本).
+- 4個桌面測試檔之`after`以`restoreBin()`還原`process.env.W_BIN_*`並刪`test/_tmp/<tag>`:該hook若逾時(滿載時`browser.close()`過慢),`restoreBin`會在其後遲到執行,把環境變數改回前一檔之舊值,下一檔的`ensureBins`即找不到截圖exe(舊版快照8壓力行程第2次執行實見該錯誤,訊息所指快取路徑為`_tmp/mousekey/`;「遲到之`restoreBin`改回環境變數」為由此推得之機制,未另行重現);新測試以`this.timeout(120000)`緩解,未改`binEnv.mjs`之還原方式.
 - `test/tools/helper.mjs:checkScreen`仍把截圖本身之任何失敗當成無桌面而略過(既有);截圖exe取得失敗(鏡像或清單有誤)則直接拋錯,不略過.
 - AutoHotkey之`license.txt`(GPLv2)隨`_autoHotkey/`刪除;README註明授權與官方連結,是否需把授權文字放回repo待使用者裁示.
 - 發布由使用者進行;發布後可再以真實網址跑一次`ensureBins()`(本輪全部為本機替身,規格§9亦建議).
