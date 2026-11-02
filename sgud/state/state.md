@@ -2,7 +2,7 @@
 
 本檔記載當前已開發功能之最新狀態(只記現況,過程寫入`sgud/exp/experience.md`),與`sgud/rule/rulebook.md`(藍圖)比對即知尚未做到者.接續工作時先讀本檔.過長時依功能類型拆為`state_<類型>.md`,本檔只留索引.
 
-最近更新:2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
+最近更新:2026-11-02(pk-mousekey:npm包檢查測試依dspec〈自有套件之npm發布範圍〉原則2〈套件測試之npm包檢查〉①②改寫,`.npmignore`首段改為`.gitignore`完整抄錄,全套`npm test` 101 passing;`version`未動);2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
 
 ## 計時器相關之測試(規則R05,tm-mousekey)
 
@@ -26,8 +26,8 @@
 | 外部執行檔 | 依制式規格(`C:\opensrcOper\dspec\外部執行檔之存放下載校驗與離線.md`),A類,釘選模式;8檔在repo`bin/`(`AutoHotkey64.exe`,6個`z*.ahk`,`screenCapture_1.3.2.exe`),不入npm包 | R02 | `api-ensureBins`,`unit-binManifest` |
 | 清單 | `bin/manifest.json`由`toolg/genBinManifest.mjs`產生,釘選提交`949e2af6fbc8ccfe53ff8addb88b61e379eb130b`,8檔sha256與大小(與舊`1bb3f051…`清單逐一相同) | R03 | `unit-binManifest` |
 | 取得入口 | `src/ensureBins.mjs`(轉呼叫wsemi 1.9.27`fsEnsureBins`,`pkgRoot`=本檔上一層,不轉傳`floatingManifestUrl`);`WMousekey.ensureBins`屬性;`mousekey`,`screen`,`recScp`已改經它取得路徑,各取所需之檔 | R02,R04 | `api-ensureBins`(T3~T7,接線) |
-| npm包內容 | `bin/`只有`manifest.json`;無`.exe/.ahk/.bat/.cmd/.chm`,無`bin-cache/`,無開發用檔;`dist/`,`src/`,`README.md`,`LICENSE`,`SECURITY.md`,`package.json`入包 | R01 | `unit-npmPack`,`unit-binManifest`(T1) |
-| 忽略規則 | `.npmignore`:`/bin/*`,`!/bin/manifest.json`,`/bin-cache/`,`/test/_tmp/`(另保留副檔名兜底);`.gitignore`:`/bin-cache/`;`.gitattributes`:`bin/** binary` | R01 | `unit-binManifest` |
+| npm包內容 | 2026-11-02 `npm pack --dry-run` 118檔:`bin/`只有`manifest.json`;無`.exe/.ahk/.bat/.cmd/.chm/.dll/.zip`等外部執行檔類,無`bin-cache/`,無`CLAUDE*.md`,`tmp/`,`.env`;`dist/`,`src/`,`README.md`,`LICENSE`,`SECURITY.md`,`package.json`入包;`sgud/`(3檔),`test/`(31檔,含`test/tools/`9),`docs/`,`toolg/`,`pic/`,`g*.mjs`,`script*`,開發設定檔依dspec原則1隨包;執行期`src/+dist/+bin/`16檔462,076位元組(單檔最大241,465) | R01 | `unit-npmPack`(8案),`unit-binManifest`(T1) |
+| 忽略規則 | `.npmignore`(原則2第1條,有外部執行檔):首段=`.gitignore`完整抄錄(含`/bin-cache/`),其後`/bin/*`,`!/bin/manifest.json`,`/test/_tmp/`及副檔名兜底`*.exe *.ahk *.bat *.cmd *.chm`(皆加註);`.gitignore`:`/bin-cache/`;`.gitattributes`:`bin/** binary` | R01 | `unit-npmPack`(首段抄錄,夾具),`unit-binManifest` |
 | 已移除(原則14,無相容層) | `_autoHotkey/`,`_screenCapture/`,`src/binEnsure.mjs`,`src/binManifest.mjs`,`src/getAhk.mjs`,`src/getScreenCapture.mjs`;環境變數`WMOUSEKEY_AHK_DIR/SCREENCAPTURE_EXE/CACHE_DIR`;`WMousekey`之`getAhk/ensureAhk/getScreenCapture/ensureScreenCapture` | R02 | `unit-binManifest`,`api-ensureBins` |
 | README | 〈外部執行檔〉(含`W_BIN_CACHE/MIRROR/OFFLINE`與離線部署)與〈Breaking changes〉 | — | — |
 | rollup | `toolg/gDistRollup.mjs`之external/globals補`url`,`stream`,`stream/promises`(原已有`os`,`crypto`,`child_process`);已以`tmp/`重建UMD驗證:`require()`所得物件含`ensureBins`,`ensureBins`之套件根為`dist/`上一層 | R02 | 手動(見經驗) |

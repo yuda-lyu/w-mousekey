@@ -6,7 +6,7 @@
 
 | 規則 | 一句話 | 對應測試 |
 | --- | --- | --- |
-| R01 | npm包不得含執行檔與腳本檔,`bin/`下只有`manifest.json`入包 | `test/unit-npmPack.test.mjs`,`test/unit-binManifest.test.mjs`(T1) |
+| R01 | npm包不得含外部執行檔與其附屬,`bin/`下只有`manifest.json`入包;其餘git版控內容(`sgud/`,`docs/`,`test/`,`toolg/`等)依dspec〈自有套件之npm發布範圍〉隨包 | `test/unit-npmPack.test.mjs`,`test/unit-binManifest.test.mjs`(T1) |
 | R02 | 外部執行檔之存放/下載/校驗/離線一律依制式規格,經`src/ensureBins.mjs`(wsemi `fsEnsureBins`)取得 | `test/api-ensureBins.test.mjs`(T3~T7),`test/unit-binManifest.test.mjs` |
 | R03 | `bin/manifest.json`由`toolg/genBinManifest.mjs`產生,與repo`bin/`實檔及釘選提交內位元組一致 | `test/unit-binManifest.test.mjs`(T2,M4) |
 | R04 | 各公開入口只經`ensureBins`回傳之路徑啟動執行檔,不直連、不用舊路徑,交換檔不寫執行檔所在夾 | `test/api-ensureBins.test.mjs`(接線) |
@@ -14,12 +14,17 @@
 | R06 | 負載執行器`test/tools/loadTrial.mjs`,`loadPreload.mjs`為wsemi統一版,兩檔同時整份複製自`node_modules/wsemi/test/tools/`、位元組全等、不各自修改;環境變數`WSEMI_LT_*` | `test/unit-loadTrial.test.mjs` |
 | 廢止 | 舊R02~R05(自寫下載/快取/校驗,並行保護,環境變數自行指定路徑)已隨自寫程式刪除 | — |
 
-## R01 npm包不得含執行檔與腳本檔(2026-10-26,2026-10-29依制式規格S1修訂)
+## R01 npm包不得含外部執行檔與其附屬(2026-10-26,2026-10-29依制式規格S1修訂,2026-11-02依dspec〈自有套件之npm發布範圍〉修訂)
 
-**規則**:`npm pack`之檔案清單不得有任何`.exe`,`.ahk`,`.bat`,`.cmd`,`.chm`,`.dll`,`.zip`等執行檔與壓縮檔,`bin/`下只有`manifest.json`,不得有`bin-cache/`,不得有舊路徑資料夾`_autoHotkey/`,`_screenCapture/`,不得有開發用檔(根目錄`g*.mjs`,`pic/`,`script*.json`,`script.txt`,`test/`,`docs/`,`toolg/`,`sgud/`,`_tmp/`,`CLAUDE*.md`及開發設定檔).`dist/`(`main`入口)與`src/`(README以`w-mousekey/src/*.mjs`匯入)須入包.
-**why**:2026-10-26凌晨npm帳號被鎖並移除1.0.41,1.0.42,研判整個repo入包(含AutoHotkey32/64.exe,安裝類ahk,bat,cmd,chm,截圖exe)被判為可疑.2026-10-28使用者裁示含外部執行檔之套件統一制式規格(S1:執行檔不入npm包,清單入包為校驗依據).
-**實作**:`.npmignore`——`/bin/*`+`!/bin/manifest.json`(gitignore語意下排除整個資料夾後無法再納入其中之檔),`/bin-cache/`,`/test/_tmp/`;副檔名`*.exe *.ahk *.bat *.cmd *.chm`不錨定兜底(日後任何位置新增此類檔也不入包);開發用檔一律以`/`開頭錨定套件根(`/g*.mjs`只排根目錄,不誤傷`src/get*.mjs`).`.gitignore`列`/bin-cache/`,`.gitattributes`列`bin/** binary`.
-**測試**:`unit-binManifest`之T1先放誘餌檔(`bin/*.dll`,`bin/*.zip(.001)`,`bin/*.bin`,`bin-cache/*/*.bin`,`src/AutoHotkey64.exe`)再`npm pack --dry-run`,缺規則時確定性變紅;`unit-npmPack`另把`.npmignore`套在自建夾具驗證樣式本身.
+**規格(唯一真理源)**:`C:\opensrcOper\dspec\自有套件之npm發布範圍.md`(原則1~4,原則2〈套件測試之npm包檢查〉①②;2026-11-02使用者裁示A)與`外部執行檔之存放下載校驗與離線.md`(S1).本節只摘要.
+**規則**:
+1. 「不得入包」只列:外部執行檔與壓縮檔(`.exe`,`.dll`,`.node`,`.msi`,`.zip`,`.7z`,`.gz`,`.tgz`)及其附屬腳本(`.ahk`,`.bat`,`.cmd`,`.chm`),`bin/`除`manifest.json`外之檔(含`bin-cache/`、舊路徑資料夾`_autoHotkey/`,`_screenCapture/`),`CLAUDE*.md`,`tmp/`,`test/_tmp/`,`_tmp/`,`.env`.
+2. `sgud/`,`docs/`(含`docs/dist/`),`test/`(含`test/tools/`),`toolg/`,`pic/`,根目錄`g*.mjs`,`script*.json`,`script.txt`,開發設定檔等git版控內容依原則1**隨包,測試不得斷言其不在**(2026-11-02前之舊規定「開發用檔不入包」已作廢).`dist/`(`main`入口)與`src/`(README以`w-mousekey/src/*.mjs`匯入)須入包;`sgud/`(至少`sgud/state/state.md`)與`test/tools/`須入包(原則4).
+3. 大小上限**只計執行期之`src/`,`dist/`,`bin/`**:單檔≤500KB、總和<1MB(2026-11-02實測16檔462,076位元組,`dist/w-mousekey.umd.js`最大241,465);整包(含`docs/`等)約2.7MB不在此限.
+4. `.npmignore`(本套件有外部執行檔,依原則2第1條提供):首段完整抄錄`.gitignore`(順序與內容一致,`.gitignore`改動時同步),其後只有第1條之排除項並加註;不得排除`sgud`,`src/`(執行檔除外),`dist/`,`README.md`,`LICENSE`,`package.json`,`test/tools/`(原則3,4).
+**why**:2026-10-26凌晨npm帳號被鎖並移除1.0.41,1.0.42,研判整個repo入包(含AutoHotkey32/64.exe,安裝類ahk,bat,cmd,chm,截圖exe)被判為可疑.2026-10-28使用者裁示含外部執行檔之套件統一制式規格(S1:執行檔不入npm包,清單入包為校驗依據).2026-11-01使用者裁示程式碼與文件皆為資產,`sgud/`等隨包;2026-11-02裁示A:套件測試之包檢查只擋外部執行檔類、大小只計執行期檔.
+**實作**:`.npmignore`——首段=`.gitignore`(`node_modules`,`/bin-cache/`,`test/_tmp`,`.agents`,`CLAUDE*.md`,`AGENTS*.md`,`.env`,`tmp`,`.opencode`,`.claude`,`_tmp`);其後(第1條)`/bin/*`+`!/bin/manifest.json`(gitignore語意下排除整個資料夾後無法再納入其中之檔),`/test/_tmp/`;副檔名`*.exe *.ahk *.bat *.cmd *.chm`不錨定兜底(日後任何位置新增此類檔也不入包).`.gitignore`列`/bin-cache/`,`.gitattributes`列`bin/** binary`.
+**測試**:`unit-npmPack`(8案:禁入副檔名;`bin/`只有`manifest.json`;`CLAUDE*.md`,`tmp/`,`_tmp/`,`.env`不在;`sgud/`與`test/tools/`全部檔在;`package.json`,`README.md`,`LICENSE`,`dist/`,`src/`,`bin/manifest.json`在;執行期大小;`.npmignore`首段抄錄`.gitignore`;夾具:只排外部執行檔類與`.gitignore`所列,`sgud`,`docs`,`docs/dist`,`test`,`test/tools`,`toolg`,`g*.mjs`,`pic`,`script*`,開發設定檔保留);`unit-binManifest`之T1先放誘餌檔(`bin/*.dll`,`bin/*.zip(.001)`,`bin/*.bin`,`bin-cache/*/*.bin`,`src/AutoHotkey64.exe`)再`npm pack --dry-run`,缺規則時確定性變紅.
 **盤點指令**(可重跑,輸出須為空):
 
 ```bash
@@ -27,8 +32,9 @@
 npm pack --dry-run --json --ignore-scripts | node -e "let j=JSON.parse(require('fs').readFileSync(0,'utf8'));j=Array.isArray(j)?j[0]:Object.values(j)[0];console.log(j.files.map(f=>f.path).filter(p=>/\.(exe|ahk|bat|cmd|chm|dll|zip|bin)$/i.test(p)||/^(bin|bin-cache|_autoHotkey|_screenCapture)\//.test(p)).join('\n'))"
 ```
 
-**站點全集**(2026-10-29盤點,20檔):`LICENSE README.md SECURITY.md package.json bin/manifest.json dist/*(2) src/*.mjs(13)`;其餘皆刻意不入(上列開發用檔,含`.gitattributes`).
-**判準**:已套=清單內無禁入項且`bin/`只有`manifest.json`;`docs/`為gh-pages(`npm run deploy`)用JSDoc靜態站,刻意不入包.
+**站點全集**(2026-11-02盤點,`npm pack --dry-run`共118檔):頂層根檔22(`LICENSE README.md SECURITY.md package.json`、`g*.mjs`6、`script*.json`+`script.txt`6、開發設定檔`.editorconfig .eslintignore .eslintrc.js .gitattributes .jsdoc babel.config.js`)、`bin/manifest.json`、`dist/*`(2)、`src/*.mjs`(13)、`sgud/`(3)、`test/`(31,含`test/tools/`9)、`toolg/`(6)、`docs/`(38,含`docs/dist/`2)、`pic/`(1)、`licenses/`(1);不入包者只有外部執行檔類(`bin/`8檔)、`CLAUDE*.md`、`tmp/`、`_tmp/`、`test/_tmp/`、`.env`.
+**判準**:已套=清單內無禁入項且`bin/`只有`manifest.json`;`sgud/`,`test/tools/`在包內;執行期`src/+dist/+bin/`大小在門檻內;`docs/`等開發資產隨包屬依規定,不是缺陷(`docs/dist/`為`dist/`之gh-pages複本,包內有兩份dist,2026-11-02使用者裁示接受).
+**變異證明**(2026-11-02,13項,結果見任務報告):`src/`放假`.dll`,拿掉`*.exe`+放假`.exe`,`test/`放假`.zip`,拿掉`/bin/*`,拿掉`CLAUDE*.md`,`.npmignore`加`sgud`,加`/test/tools/`,`src/`放600KB檔,`src/`放3個400KB檔,首段少`/bin-cache/`皆使對應案轉紅;`docs/`放2MB檔(口徑對照)維持綠.
 
 ## R02 外部執行檔依制式規格取得(2026-10-29,bin-mousekey)
 

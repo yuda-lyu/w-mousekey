@@ -114,7 +114,8 @@ describe(`bin/manifest.json`, function() {
         }
     })
 
-    it(`should keep the cache out of git and the npm package (S5) and bin/ out of the npm package except the manifest (S1)`, function() {
+    //自有套件之npm發布範圍 原則2第1條: 外部執行檔與其附屬(/bin/*、快取夾、存放執行檔副本之測試暫存夾)才以.npmignore排除
+    it(`should keep the cache out of git and the npm package (S5) and bin/ out of the npm package except the manifest (S1; npm publish scope principle 2 clause 1)`, function() {
         assert.strict.equal(lines('.gitignore').includes('/bin-cache/'), true)
         assert.strict.equal(lines('.npmignore').includes('/bin-cache/'), true)
         assert.strict.equal(lines('.npmignore').includes('/test/_tmp/'), true)
@@ -123,7 +124,8 @@ describe(`bin/manifest.json`, function() {
         assert.strict.equal(lines('.gitattributes').includes('bin/** binary'), true) //F12
     })
 
-    it(`should not pack external executables into the npm package, only bin/manifest.json (S1, T1)`, function() {
+    it(`should not pack external executables into the npm package, only bin/manifest.json (S1, T1; npm publish scope principle 2 package-test check item 1)`, function() {
+        //自有套件之npm發布範圍 原則2〈套件測試之npm包檢查〉①: 「不得入包」只列外部執行檔與壓縮檔、bin/除manifest.json外之檔(sgud/,docs/,test/,toolg/等git版控內容依原則1隨包, 不在此斷言)
         //測試暫存(鏡像、快取)與bin/、bin-cache/可能放有執行檔或壓縮檔副本(他測試平行執行時即是), 放誘餌確保缺規則時確定性變紅
         let decoys = [
             path.join(fdt, 'leak', 'AutoHotkey64.exe'),
@@ -145,7 +147,7 @@ describe(`bin/manifest.json`, function() {
             let j = JSON.parse(r.stdout)
             let info = Array.isArray(j) ? j[0] : Object.values(j)[0] //npm 11以前為陣列, npm 12起為以套件名為鍵之物件
             let fps = info.files.map((v) => v.path.replace(/\\/g, '/'))
-            assert.strict.deepStrictEqual(fps.filter((v) => /\.(exe|dll|msi|zip|7z|ahk|bat|cmd|chm|bin|\d{3})$/i.test(v)), [])
+            assert.strict.deepStrictEqual(fps.filter((v) => /\.(exe|dll|node|msi|zip|7z|gz|tgz|ahk|bat|cmd|chm|bin|\d{3})$/i.test(v)), [])
             assert.strict.deepStrictEqual(fps.filter((v) => v.startsWith('bin/') || v.startsWith('bin-cache/')), ['bin/manifest.json'])
             //套件內無舊路徑檔(src/<執行檔>)與舊資料夾
             assert.strict.deepStrictEqual(fps.filter((v) => /^(_autoHotkey|_screenCapture)\//.test(v) || v.startsWith('src/AutoHotkey') || v.startsWith('src/screenCapture')), [])

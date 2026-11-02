@@ -1,4 +1,5 @@
 node_modules
+/bin-cache/
 test/_tmp
 .agents
 CLAUDE*.md
@@ -9,16 +10,14 @@ tmp
 .claude
 _tmp
 
-
-
-
-# 執行檔與腳本檔不入 npm 包, 只有 bin/manifest.json 入包(釘選之校驗依據), 首次使用時依它自 GitHub 釘選提交下載並驗證 SHA-256(規格 S1, 見 src/ensureBins.mjs)
-# gitignore 語意下排除整個資料夾後無法再納入其中之檔, 故用 /bin/* 再以 ! 納入清單; 快取夾與測試暫存夾亦不入包
+# 以下為自有套件之npm發布範圍(dspec) 原則2第1條「外部執行檔與其附屬」之排除項; 上方為.gitignore之完整抄錄(原則3, .gitignore改動時須同步)
+# 外部執行檔(AutoHotkey64.exe, screenCapture_1.3.2.exe)與其附屬腳本(z*.ahk)不入 npm 包, 只有 bin/manifest.json 入包(釘選之校驗依據), 首次使用時依它自 GitHub 釘選提交下載並驗證 SHA-256(外部執行檔規格 S1, 見 src/ensureBins.mjs)
+# gitignore 語意下排除整個資料夾後無法再納入其中之檔, 故用 /bin/* 再以 ! 納入清單(第1條)
 /bin/*
 !/bin/manifest.json
-/bin-cache/
+# 存放執行檔副本之測試暫存夾(第1條; 快取夾 /bin-cache/ 已在上方 .gitignore 抄錄段)
 /test/_tmp/
-# 再以副檔名兜底(日後任何位置新增此類檔也不會入包), npm 包內不得有 .exe .ahk .bat .cmd .chm
+# 再以副檔名兜底(日後任何位置新增此類檔也不會入包), npm 包內不得有外部執行檔與其附屬 .exe .ahk .bat .cmd .chm(第1條)
 *.exe
 *.ahk
 *.bat

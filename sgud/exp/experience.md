@@ -2,6 +2,13 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 2026-11-02 npm包檢查測試依新規格改寫(pk-mousekey)
+
+- **舊規定(「開發用檔/sgud/docs/test/toolg不得入包」、整包大小上限)已作廢**:規格改為 dspec〈自有套件之npm發布範圍〉原則1(npm包=git版控內容,皆隨包)與原則2〈套件測試之npm包檢查〉①「不得入包」只列外部執行檔/壓縮檔、`bin/`除清單外之檔、`CLAUDE*.md`、`tmp/`、`test/_tmp/`、`.env`;②大小只計執行期`src/`+`dist/`+`bin/`.日後新增打包斷言先對照此規格,**不得斷言`sgud/`,`docs/`,`test/`,`toolg/`,`script.txt`,開發設定檔「不在」**.
+- **`.npmignore`首段須與`.gitignore`逐行一致(含順序)**:原先`/bin-cache/`只在第二段,首段少一行;`unit-npmPack`新增「首段抄錄」案以去註解/空行後之列比對.`.gitignore`改動時兩檔同步.
+- **夾具案(把`.npmignore`套在自建夾具)的期望清單要改成「保留」多於「排除」**:排除只剩外部執行檔類與`.gitignore`所列;期望值用 `kept` 清單 `deepStrictEqual`,日後`.npmignore`誤加`sgud`/`test/tools`等會立刻紅.
+- **口徑對照案**:變異「`docs/`放2MB檔」大小案仍綠,證明大小只計`src/+dist/+bin/`;變異作法為暫放假檔/暫改`.npmignore`後跑mocha(`--reporter json --reporter-option output=<檔>`收失敗案名),`finally`還原並以sha256回驗.
+
 ## 2026-10-30 負載執行器改用wsemi統一版(a-mousekey,第184項)
 
 - **來源與環境變數**:`test/tools/loadTrial.mjs`、`loadPreload.mjs` 自 `node_modules/wsemi/test/tools/`(wsemi 1.9.33 隨包發布 `test/tools/`)以 `cp` **同時**複製,`cmp`/sha256 驗位元組全等,不改一個字.環境變數 `MKEY_LT_*` → `WSEMI_LT_PROBE/LAG/DIAG`(取代下列 10-29 節「改 `MKEY_LT_LAG/PROBE`」之作法);原本本套件自加的「報告寫出後逾 30 秒未退出」即統一版的 `--hang-sec`(預設 30,別名 `--exit-grace`),失敗鍵改為 `(mocha did not exit)`;`--guard` 為統一版內建,離開碼 3 照舊(下列 10-30 節的 `fgcheck` 作法不變).新增 `--run-max`(預設 900 秒,舊版無上限;逾 15 分之單次須給 `--run-max 0`)與 `--diag`.
