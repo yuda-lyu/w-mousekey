@@ -70,6 +70,18 @@ await runScp('./script.json', { onTrace: (e) => console.log(e.type) })
 - 各 `type` 之完整欄位見 `src/waitPics.mjs`、`src/runScp.mjs` 之 JSDoc.`runScp` 新增第二參數 `opt`(選用),原 `runScp(inputFile)` 之呼叫不變.
 - 兩者皆經 wsemi 之 `getTrace`(`wsemi/src/getTrace.mjs`,需 wsemi >= 1.9.31)取得回調.
 
+## 開發與測試之瀏覽器(經 `w-playwright`)
+
+本套件執行期(`src/`)不啟動瀏覽器;只有開發用測試(`unit-mousekey`、`unit-runScp`、`unit-ckPic`、`unit-waitPics`、`unit-compare`)以**有頭之真 Chrome** 驗證 OS 層滑鼠鍵盤與桌面截圖,故 Playwright 僅為開發依賴.瀏覽器一律經自有套件 [`w-playwright`](https://www.npmjs.com/package/w-playwright) 啟動(`devDependencies`,入口為 `test/tools/helper.mjs` 之 `launchBrowser()`,每個測試檔於 `before` 啟動一次、`after` 關閉),不直接依賴 `playwright`／`playwright-core`.
+
+- **安裝**:`npm i` 即帶入 `w-playwright`,其依賴之 `playwright-core` 為精確版本 `1.64.1`;不需也不應另裝 `playwright`／`playwright-core`.
+- **受管瀏覽器之取得**(無頭之 headless shell;`unit-pwWiring` 之真路徑案使用):以 `await wpw.ensureChromium()` 取得(該案於執行時自行呼叫,無法取得時明確略過並寫明原因);**不要用 `npx playwright install`**(依賴樹中他版被提升時會下載到不同版本之瀏覽器).
+- **離線**:於可連網之機器以同版 `w-playwright` 執行一次 `ensureChromium()`,把 Playwright 之瀏覽器資料夾(Windows 預設 `%LOCALAPPDATA%\ms-playwright`)複製至目標機,並以環境變數 `PLAYWRIGHT_BROWSERS_PATH` 指向該資料夾;**須在載入 `w-playwright` 前設定**.
+- **真 Chrome**:需有頭真 Chrome 與真實桌面之測試(見 `sgud/rule/rulebook.md` 〈需真實桌面之測試之前置〉)**須先安裝 Google Chrome**;`w-playwright` 之 `findSystemChrome()` 只以檔案存在判定,不代表可啟動.
+- **一律加入之守門參數與原因**:Windows 上 Chromium 153 起,每啟動一個新的瀏覽器根行程,即以無效密碼替目前使用者呼叫一次 `LogonUser`(安全性紀錄 4625、錯誤密碼次數 +1;本機原則 10 分鐘內 10 次即鎖定帳號).`w-playwright` 於每次啟動之命令列**恰給一個** `--disable-features`(Playwright 預設清單＋`AutofillAiWalletPrivatePasses`＋呼叫端自給者),停用該功能即不再發生;本套件測試不得繞過 `w-playwright`(`unit-pwOnly` 掃描全庫無直接匯入 `playwright`／`playwright-core`,`unit-pwWiring` 斷言 `launchBrowser()` 送出之選項含守門).
+- **不支援之環境變數**:`PWDEBUG`(inspector 模式)與 `SELENIUM_REMOTE_URL` 會使守門失效,`w-playwright` 一律拒絕(`E_ENV`).另有選用之執行期登入守門 `W_PLAYWRIGHT_LOGON_GUARD=1`(啟動非 headless shell 之瀏覽器前先讀錯誤密碼次數,≥1 即拒絕),見其 README.
+- **行為變更(僅測試)**:啟動真 Chrome 之命令列由 Playwright 預設之一串 `--disable-features` 改為合併後之一串(多 `AutofillAiWalletPrivatePasses`);`test/tools/fakeDesktop.mjs`(替身桌面,手動工具)改以 `w-playwright` 之 `setBrowserTypeForTest` 強制無頭,不再改寫 `playwright` 之 `chromium.launch`;`unit-compare` 改經 `launchBrowser()`(頁面多注入一個只記錄事件之紀錄器,不影響截圖).公開 API 不變.
+
 ## 外部執行檔
 
 本套件執行時需要下列外部執行檔與腳本,不含於 npm 包(npm 包內 `bin/` 只有清單 `manifest.json`):

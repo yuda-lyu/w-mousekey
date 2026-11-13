@@ -12,6 +12,7 @@
 | R04 | 各公開入口只經`ensureBins`回傳之路徑啟動執行檔,不直連、不用舊路徑,交換檔不寫執行檔所在夾 | `test/api-ensureBins.test.mjs`(接線) |
 | R05 | 計時器相關之測試以事件同步(`opt.onTrace`+條件式等待+假時鐘),固定延時只作看門狗上限;桌面測試`--lock-exclusive`;規格見dspec | `test/unit-waitPicsTrace.test.mjs`,`test/unit-runScpTrace.test.mjs`,4個桌面測試檔 |
 | R06 | 負載執行器`test/tools/loadTrial.mjs`,`loadPreload.mjs`為wsemi統一版,兩檔同時整份複製自`node_modules/wsemi/test/tools/`、位元組全等、不各自修改;環境變數`WSEMI_LT_*` | `test/unit-loadTrial.test.mjs` |
+| R07 | 測試啟動之 Chromium 系瀏覽器一律經自有套件 `w-playwright`(dev 依賴),不直接依賴或匯入 `playwright`／`playwright-core`(全庫規則 R-PW-ONLY、R-PW-WIRING 之本套件落實);啟動點收斂為 `test/tools/helper.mjs` 之 `launchBrowser()`,5 個測試檔各啟動一次 | `test/unit-pwOnly.test.mjs`,`test/unit-pwWiring.test.mjs` |
 | 廢止 | 舊R02~R05(自寫下載/快取/校驗,並行保護,環境變數自行指定路徑)已隨自寫程式刪除 | — |
 
 ## R01 npm包不得含外部執行檔與其附屬(2026-10-26,2026-10-29依制式規格S1修訂,2026-11-02依dspec〈自有套件之npm發布範圍〉修訂)
@@ -70,7 +71,7 @@ npm pack --dry-run --json --ignore-scripts | node -e "let j=JSON.parse(require('
 4. 新測試對 `mk`、`sc` 以**property 替換並於 `after` 還原**(`mk.mouseClick`、`sc.screenSave`),不用 `mk.init`/`sc.init`(無法還原,會污染同一 mocha 行程內後續之真實 AHK 測試).
 5. 每個加 `onTrace` 之函數補五種回調案(未傳、紀錄器、拋錯、回傳 rejection、非函數;結果相同、無未處理之 rejection)與事件契約案(凍結、`this` 為 undefined、`type` 在列舉內、其餘欄位為原始值).
 6. 4 個需真實桌面之測試檔與全套 `npm test` 一律 `--lock-exclusive`(獨占螢幕與滑鼠),其餘單檔 `--lock`;負載試驗用 `test/tools/loadTrial.mjs` 與 `loadPreload.mjs`(wsemi 統一版,見 R06;含「json 報告寫出後逾 `--hang-sec` 秒〔預設 30,別名 `--exit-grace`〕未退出即判『測完不退出』」與 `--guard <腳本>`:每輪前先跑該腳本,離開碼非 0 即停止其後各輪、離開碼 3,供會盲目鍵入之舊版快照於每輪前做前景確認,見〈需真實桌面之測試之前置〉).
-7. 真實桌面不可用時,以 `test/tools/fakeDesktop.mjs`(替身桌面預載模組,無頭 Chrome+Playwright 模擬 OS 層輸入與桌面截圖;用法與 `FD_MUT`/`FD_LATE_MS` 見檔頭)實跑 4 個桌面測試檔以驗證測試邏輯、變異與「非缺陷之時序變異」;**不得取代真實桌面實跑**(Playwright 輸入同步,與 AutoHotkey 經 OS 非同步送達不同).
+7. 真實桌面不可用時,以 `test/tools/fakeDesktop.mjs`(替身桌面預載模組,無頭 Chrome 經 `w-playwright` 之 `setBrowserTypeForTest` 強制無頭,模擬 OS 層輸入與桌面截圖;用法與 `FD_MUT`/`FD_LATE_MS` 見檔頭;2026-11-13 起不再改寫 `playwright` 之 `chromium.launch`,見 R07)實跑 4 個桌面測試檔以驗證測試邏輯、變異與「非缺陷之時序變異」;**不得取代真實桌面實跑**(Playwright 輸入同步,與 AutoHotkey 經 OS 非同步送達不同).
 **盤點指令**(可重跑,輸出只應剩下列一行):
 
 ```text
@@ -91,6 +92,28 @@ Grep pattern="waitForTimeout|setTimeout\(resolve|sleep\(|delay\(" path=test glob
 **盤點指令**(可重跑,輸出應為空):`git grep -n --untracked "MKEY_LT_\|did not exit by itself" -- . ":!sgud" ":!test/unit-loadTrial.test.mjs" ":!tmp"`(排除之 `unit-loadTrial` 以舊名斷言其不存在);位元組全等:`cmp node_modules/wsemi/test/tools/loadTrial.mjs test/tools/loadTrial.mjs`、`cmp node_modules/wsemi/test/tools/loadPreload.mjs test/tools/loadPreload.mjs`(輸出應為空).
 **測試**:`test/unit-loadTrial.test.mjs`(不需桌面,`--lock`,約 4 秒)R06-1~R06-8:位元組全等;前綴;通過案(子行程取得 `WSEMI_LT_PROBE/LAG`、無 `MKEY_LT_*`、預載模組寫出 probe、預設 hangSec 30/runMax 900);失敗案之鍵格式;測完不退出之鍵與 `--exit-grace`;guard 失敗離開碼 3;不合法選項拒收;`--burners` 之壓力行程 PID 回驗已終止.夾具為測試自寫於 `test/_tmp/loadTrial/` 並於 `after` 刪除.
 
+## R07 瀏覽器一律經 w-playwright(2026-11-13,排程第 442 項遷移輪)
+
+**規格(唯一真理源)**:全庫設計報告(主控任務 `20261113103344` 之 `pw-design-設計報告.md` §5.1、§5.2、§8.4、§8.5)與 `w-playwright` 之 README、`sgud/rule/rulebook.md`(R-PW-ONLY、R-PW-WIRING).本節只摘要.
+**why**:Windows 上 Chromium 系瀏覽器(真 Chrome 153 起、完整 Chromium、Edge)每啟動一個新根行程即以錯誤密碼替目前使用者呼叫一次 `LogonUser`,本機原則 10 分鐘內 10 次即鎖定帳號(2026-11-13 已發生).`w-playwright` 於每次啟動合併出**恰一串** `--disable-features`(Playwright 預設＋`AutofillAiWalletPrivatePasses`＋呼叫端自給者)並統一 Playwright 版本(`playwright-core` 精確 1.64.1).
+**規則**:
+1. `package.json` 不得宣告 `playwright`／`playwright-core`;`w-playwright` 為 `devDependencies`(`^1.0.1`;`src/` 不啟動瀏覽器,故不入 `dependencies`,`toolg/gDistRollup.mjs` 之 external／globals 不必加).
+2. 全部 `.mjs`／`.js`(`src`,`test`,`toolg`,根目錄 `g*.mjs`;含動態 import、require)不得直接匯入 `playwright`／`playwright-core`.
+3. 啟動點只有 `test/tools/helper.mjs` 之 `launchBrowser()`(`wpw.launchChromium({ headless: false, channel: 'chrome' })`,有頭真 Chrome:AHK 之 OS 層輸入與桌面截圖須見得到視窗);`unit-compare`,`unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics` 5 檔各於 `before` 呼叫一次、`after` 關閉(同檔共用,設計 §5.2).新增會啟動瀏覽器之測試須走 `launchBrowser()` 並更新 `unit-pwOnly` 之全集.
+4. 替身桌面 `fakeDesktop.mjs` 以 `wpw.setBrowserTypeForTest` 之替身(`launch(opts, next)` → `next({ ...opts, headless: true })`)強制無頭,與 `helper.mjs` 取同一個 `w-playwright` 模組.
+5. 環境:不得移除或覆寫 `W_PLAYWRIGHT_LOGON_GUARD`(派工所設之執行期登入守門);跑會啟動真 Chrome/Edge/完整 Chromium 之測試前後以主控之 `badpw` 讀錯誤密碼次數,增加即停;`PWDEBUG`、`SELENIUM_REMOTE_URL` 不得設(`w-playwright` 拒絕,`E_ENV`).
+**盤點指令**(可重跑,命中須為 0;防空集合以 `w-playwright/src/_pw.mjs` 為必命中之正例):
+
+```bash
+rg -n --glob '*.{mjs,js}' --glob '!**/node_modules/**' --glob '!**/dist/**' "(from\s+|import\(\s*|require\(\s*)['\"\`]playwright(-core)?['\"\`/]" .
+rg -n --glob '**/package.json' --glob '!**/node_modules/**' "\"playwright(-core)?\"\s*:" .
+rg -n "wpw\.(launchChromium|launchChromiumPersistent)\(" src test toolg   # 只應命中 test/tools/helper.mjs:launchBrowser 一處
+```
+
+**站點全集與判準**(2026-11-13):`test/tools/helper.mjs:launchBrowser`=已套(唯一啟動點);`test/unit-compare.test.mjs`=已套(原直接 `chromium.launch`,改經 `launchBrowser`);`unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics`=已套(原即經 `launchBrowser`);`test/tools/fakeDesktop.mjs`=已套(原動態 import `playwright` 並改寫 `chromium.launch`,改 `setBrowserTypeForTest`).`src`,`toolg`=無啟動點(刻意不套).
+**測試**:`unit-pwOnly`(R07-1 全庫無直接匯入與其防空集合 R07-1b;R07-2 `package.json`;R07-3 啟動點全集;R07-4 呼叫 `launchBrowser` 之測試檔全集=5 且各 ≤1 次;皆只掃檔案文字,不啟動瀏覽器);`unit-pwWiring`(R07-5 以 `setBrowserTypeForTest` 替身斷言 `launchBrowser` 送出 `headless:false`、`channel:'chrome'`、`args` 最後一個元素為恰一串 `--disable-features` 且含守門與 Playwright 全部預設、`ignoreDefaultArgs` 去掉預設串、替身確被呼叫、頁面選項不變;R07-6 以 `next({ ...o, headless: true, channel: undefined })` 走 `w-playwright` 完整流程後真啟動 **headless shell**〔不啟動真 Chrome〕,需受管瀏覽器:`before` 以 `ensureChromium()` 取得,無法取得時 `this.skip()`).
+**不用 `setBrowserTypeForTest` 替身之真路徑**:5 個桌面測試檔本身(真 Chrome,經 `w-playwright` 完整流程).
+
 ## 改動範圍 → 測試檔對照(規範:依輪次只跑受影響者)
 
 | 改動 | 測試檔 |
@@ -99,7 +122,8 @@ Grep pattern="waitForTimeout|setTimeout\(resolve|sleep\(|delay\(" path=test glob
 | `.npmignore`,`.gitignore`,`.gitattributes`,`package.json`,新增/搬移套件根檔案 | `unit-binManifest`,`unit-npmPack` |
 | `src/mousekey.mjs`,`src/screen.mjs`,`src/recScp.mjs`,`src/WMousekey.mjs` | 上列 + `unit-screen`(截圖,無視窗)+ `unit-keySyntax`;`unit-mousekey`,`unit-runScp`,`unit-ckPic`,`unit-waitPics`需可見Chrome與真實滑鼠,依守則17於本機有人使用時不跑;跑時須工作階段未鎖定、未中斷且使用者未在操作該畫面,視窗縮小可(須使用者端已設登錄),且測試開始前 200 秒起至結束,使用者不得操作遠端桌面(Windows 前景鎖 `HKCU\Control Panel\Desktop\ForegroundLockTimeout`=200000 ms:最後一次使用者輸入後 200 秒內,背景啟動之有頭 Chrome 無法取得前景、被當時之前景視窗遮住;超過則可,最大化之 VS Code 亦無妨)(見〈需真實桌面之測試之前置〉),一律`--lock-exclusive` |
 | `src/waitPics.mjs`,`src/runScp.mjs`,`src/ckPic.mjs` | `unit-waitPicsTrace`,`unit-runScpTrace`(不需桌面,`--lock`) + 4個桌面測試檔(`--lock-exclusive`) |
-| `test/tools/helper.mjs`,`test/tools/traceRecorder.mjs` | 4個桌面測試檔 + `unit-waitPicsTrace`,`unit-runScpTrace` |
+| `test/tools/helper.mjs`,`test/tools/traceRecorder.mjs` | 4個桌面測試檔 + `unit-waitPicsTrace`,`unit-runScpTrace` + `unit-compare`(經 `launchBrowser`)+ `unit-pwOnly`,`unit-pwWiring` |
+| `test/tools/fakeDesktop.mjs`,`package.json` 之 `w-playwright`,`w-playwright` 升版 | `unit-pwOnly`,`unit-pwWiring`(不需桌面,`--lock`);另以替身桌面實跑 4 個桌面測試檔(`NODE_OPTIONS=--import=<fakeDesktop.mjs網址>`,啟動無頭真 Chrome,前後讀 `badpw`);有真實桌面時 5 個真 Chrome 測試檔經沙箱(`sbx-run`) |
 | `test/tools/loadTrial.mjs`,`test/tools/loadPreload.mjs`,wsemi升版 | `unit-loadTrial`(不需桌面,`--lock`);另以`loadTrial`實跑不需桌面之子集一次 |
 | `toolg/gDistRollup.mjs` | 以`tmp/`重建UMD載入驗證(`ensureBins`之套件根,external/globals含`url`,`crypto`,`stream`,`stream/promises`,`os`) |
 

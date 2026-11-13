@@ -1,4 +1,4 @@
-import { chromium } from 'playwright'
+import wpw from 'w-playwright'
 import path from 'path'
 import fs from 'fs'
 import sharp from 'sharp'
@@ -63,8 +63,10 @@ function recorderScript() {
     }
 }
 
+//本套件測試啟動瀏覽器之唯一入口(5個測試檔各於before呼叫一次): 一律經w-playwright(其於每次啟動合併出恰一串--disable-features並含守門功能AutofillAiWalletPrivatePasses,
+//避免Chromium 153起每啟動一個根行程即以錯誤密碼呼叫一次LogonUser而鎖住目前使用者之帳號); 須有頭真Chrome(AHK之OS層輸入與桌面截圖須見得到視窗), 故須安裝Google Chrome
 export async function launchBrowser() {
-    let browser = await chromium.launch({ headless: false, channel: 'chrome' })
+    let browser = await wpw.launchChromium({ headless: false, channel: 'chrome' })
     let page = await browser.newPage({
         viewport: { width: 800, height: 400 },
         deviceScaleFactor: 1,

@@ -4,7 +4,8 @@
 //  注意: 不是真實桌面. Playwright之輸入同步送入頁面, 與AutoHotkey經OS非同步送達不同, 故只能驗證測試邏輯與變異, 不能取代真實桌面實跑.
 //用法(只在mocha行程啟用, 檔名須含mocha):
 //  NODE_OPTIONS=--import=<本檔之file:///網址> node node_modules/mocha/bin/mocha.js --no-parallel test/unit-mousekey.test.mjs --timeout 180000
-//  FD_TREE: 被測樹根(含src/), 預設為本檔往上兩層(本套件根); 供對舊版快照(git archive解出之副本)實跑時指定
+//  FD_TREE: 被測樹根(含src/), 預設為本檔往上兩層(本套件根); 供對舊版快照(git archive解出之副本)實跑時指定;
+//    副本之測試須經w-playwright啟動(2026-11-13起瀏覽器一律經w-playwright, 本檔以其setBrowserTypeForTest強制無頭, 不再改寫playwright之chromium.launch, 故直接用playwright啟動之舊快照無法套用)
 //  FD_MUT: none | drop(輸入全不送達) | wrongchar(sendString/sendChar末字元改p) | rightAsLeft | dbl1 | scrollUp | noCombo
 //  FD_LATE_MS: >0時輸入延後該毫秒才送達(呼叫端先返回)——非缺陷之時序變異
 //以mk.init/sc.init注入, 無法還原, 故只供獨立之mocha行程使用, 不得於一般測試行程載入.
@@ -18,21 +19,23 @@ if (/mocha/.test(process.argv[1] || '')) {
     let late = Number(process.env.FD_LATE_MS || 0)
     let mk = (await import(pathToFileURL(path.join(tree, 'src', 'mousekey.mjs')).href)).default
     let sc = (await import(pathToFileURL(path.join(tree, 'src', 'screen.mjs')).href)).default
-    let { chromium } = await import('playwright')
+    //瀏覽器一律經w-playwright(不直接匯入playwright): 與helper.mjs之launchBrowser取同一個w-playwright模組(解析自本套件node_modules, FD_TREE副本須放在本套件根之下且不自帶node_modules)
+    let wpw = (await import('w-playwright')).default
     let sharp = (await import('sharp')).default
 
-    //以無頭Chrome取代有頭, 並記下頁面供截圖與輸入使用
-    let origLaunch = chromium.launch.bind(chromium)
-    chromium.launch = async (opts = {}) => {
-        let browser = await origLaunch({ ...opts, headless: true })
-        let origNewPage = browser.newPage.bind(browser)
-        browser.newPage = async (...a) => {
-            let p = await origNewPage(...a)
-            globalThis.__fdPage = p
-            return p
-        }
-        return browser
-    }
+    //以無頭取代有頭(經w-playwright之setBrowserTypeForTest: next(o)對o重走完整流程, 守門與恰一串--disable-features照舊), 並記下頁面供截圖與輸入使用
+    wpw.setBrowserTypeForTest({
+        launch: async (opts, next) => {
+            let browser = await next({ ...opts, headless: true })
+            let origNewPage = browser.newPage.bind(browser)
+            browser.newPage = async (...a) => {
+                let p = await origNewPage(...a)
+                globalThis.__fdPage = p
+                return p
+            }
+            return browser
+        },
+    })
 
     //桌面為1000x600灰底, 頁面視窗置於(screenX, screenY)(無頭Chrome為(10,10)), 故桌面座標=視窗內座標+(screenX, screenY)
     let DW = 1000

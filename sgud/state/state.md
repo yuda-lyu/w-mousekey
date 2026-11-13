@@ -2,7 +2,17 @@
 
 本檔記載當前已開發功能之最新狀態(只記現況,過程寫入`sgud/exp/experience.md`),與`sgud/rule/rulebook.md`(藍圖)比對即知尚未做到者.接續工作時先讀本檔.過長時依功能類型拆為`state_<類型>.md`,本檔只留索引.
 
-最近更新:2026-11-02(pk-mousekey:npm包檢查測試依dspec〈自有套件之npm發布範圍〉原則2〈套件測試之npm包檢查〉①②改寫,`.npmignore`首段改為`.gitignore`完整抄錄,全套`npm test` 101 passing;`version`未動);2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
+最近更新:2026-11-13(pm-mk:測試之瀏覽器改經自有套件 `w-playwright`,見下〈瀏覽器經 w-playwright〉;`version` 未動);2026-11-02(pk-mousekey:npm包檢查測試依dspec〈自有套件之npm發布範圍〉原則2〈套件測試之npm包檢查〉①②改寫,`.npmignore`首段改為`.gitignore`完整抄錄,全套`npm test` 101 passing;`version`未動);2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
+
+## 瀏覽器經 w-playwright(規則R07,pm-mk,排程第 442 項,2026-11-13)
+
+| 項目 | 現況 | 規則 | 測試 |
+| --- | --- | --- | --- |
+| 依賴 | `package.json`:移除 `playwright`(dev),加 `w-playwright ^1.0.1`(dev);`node_modules/w-playwright`=1.0.1,其依賴 `playwright-core` 精確 1.64.1;`src/`,`toolg/` 無任何 Playwright 引用,`toolg/gDistRollup.mjs` 之 external／globals 不需改 | R07 | `unit-pwOnly`(R07-2) |
+| 啟動點 | 唯一入口 `test/tools/helper.mjs` 之 `launchBrowser()`=`wpw.launchChromium({ headless: false, channel: 'chrome' })`;`unit-compare` 改經它;5 個測試檔各啟動一次 | R07 | `unit-pwOnly`(R07-3,4),`unit-pwWiring`(R07-5,6) |
+| 替身桌面 | `fakeDesktop.mjs` 改以 `wpw.setBrowserTypeForTest` 強制無頭;4 個桌面測試檔 12 passing(2026-11-13,`badpw` 0→0) | R05,R07 | 手動 |
+| 全庫盤點 | R-PW-ONLY 兩條指令 0 命中(防空集合以 w-playwright `src/_pw.mjs` 為正例);啟動點全集 1 處 | R07 | `unit-pwOnly` |
+| README | 新增〈開發與測試之瀏覽器(經 `w-playwright`)〉:安裝、`ensureChromium()`、離線 `PLAYWRIGHT_BROWSERS_PATH`、真 Chrome 須安裝、守門參數與原因、不支援之環境變數、行為變更 | — | — |
 
 ## 計時器相關之測試(規則R05,tm-mousekey)
 
@@ -29,7 +39,8 @@
 | npm包內容 | 2026-11-02 `npm pack --dry-run` 118檔:`bin/`只有`manifest.json`;無`.exe/.ahk/.bat/.cmd/.chm/.dll/.zip`等外部執行檔類,無`bin-cache/`,無`CLAUDE*.md`,`tmp/`,`.env`;`dist/`,`src/`,`README.md`,`LICENSE`,`SECURITY.md`,`package.json`入包;`sgud/`(3檔),`test/`(31檔,含`test/tools/`9),`docs/`,`toolg/`,`pic/`,`g*.mjs`,`script*`,開發設定檔依dspec原則1隨包;執行期`src/+dist/+bin/`16檔462,076位元組(單檔最大241,465) | R01 | `unit-npmPack`(8案),`unit-binManifest`(T1) |
 | 忽略規則 | `.npmignore`(原則2第1條,有外部執行檔):首段=`.gitignore`完整抄錄(含`/bin-cache/`),其後`/bin/*`,`!/bin/manifest.json`,`/test/_tmp/`及副檔名兜底`*.exe *.ahk *.bat *.cmd *.chm`(皆加註);`.gitignore`:`/bin-cache/`;`.gitattributes`:`bin/** binary` | R01 | `unit-npmPack`(首段抄錄,夾具),`unit-binManifest` |
 | 已移除(原則14,無相容層) | `_autoHotkey/`,`_screenCapture/`,`src/binEnsure.mjs`,`src/binManifest.mjs`,`src/getAhk.mjs`,`src/getScreenCapture.mjs`;環境變數`WMOUSEKEY_AHK_DIR/SCREENCAPTURE_EXE/CACHE_DIR`;`WMousekey`之`getAhk/ensureAhk/getScreenCapture/ensureScreenCapture` | R02 | `unit-binManifest`,`api-ensureBins` |
-| README | 〈外部執行檔〉(含`W_BIN_CACHE/MIRROR/OFFLINE`與離線部署)與〈Breaking changes〉 | — | — |
+| 2026-11-13 檔數 | `npm pack --dry-run` 121檔(`sgud/` 4,`test/` 33含`test/tools/` 9;較上列118檔多`unit-pwOnly`,`unit-pwWiring`,`sgud/feedback/feedback.md`);`bin/`仍只有`manifest.json` | R01 | `unit-npmPack` |
+| README | 〈外部執行檔〉(含`W_BIN_CACHE/MIRROR/OFFLINE`與離線部署)、〈開發與測試之瀏覽器(經 `w-playwright`)〉與〈Breaking changes〉 | — | — |
 | rollup | `toolg/gDistRollup.mjs`之external/globals補`url`,`stream`,`stream/promises`(原已有`os`,`crypto`,`child_process`);已以`tmp/`重建UMD驗證:`require()`所得物件含`ensureBins`,`ensureBins`之套件根為`dist/`上一層 | R02 | 手動(見經驗) |
 
 ## 驗證紀錄

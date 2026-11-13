@@ -1,10 +1,10 @@
-import { chromium } from 'playwright'
 import assert from 'assert'
 import path from 'path'
 import fs from 'fs'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 import cp from '../src/compare.mjs'
+import { launchBrowser } from './tools/helper.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const imgsDir = path.join(__dirname, 'imgs')
@@ -86,12 +86,8 @@ describe('compare - 圖片辨識與點擊', function () {
         //generateImages
         await generateImages()
 
-        //browser, 使用本機Chrome直接開啟本機html
-        browser = await chromium.launch({ headless: false, channel: 'chrome' })
-        page = await browser.newPage({
-            viewport: { width: 800, height: 400 },
-            deviceScaleFactor: 1,
-        })
+        //browser, 使用本機Chrome直接開啟本機html(經helper之launchBrowser, 即w-playwright, 本檔只啟動一次)
+        ;({ browser, page } = await launchBrowser())
 
         //navigate & screenshot
         await page.goto(htmlUrl)

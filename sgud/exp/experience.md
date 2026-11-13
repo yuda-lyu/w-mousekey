@@ -2,6 +2,15 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 2026-11-13 瀏覽器改經 w-playwright(pm-mk,排程第 442 項)
+
+- **為何**:Chromium 系瀏覽器(真 Chrome 153 起)每啟動一個新根行程即以錯誤密碼替目前使用者呼叫一次 `LogonUser`,10 分鐘內 10 次鎖帳號;`w-playwright` 於每次啟動合併出恰一串 `--disable-features`(含 `AutofillAiWalletPrivatePasses`).規則見規則帳本 R07.
+- **安全紀律**:修前之真瀏覽器測試不得跑(舊 helper 直接 `chromium.launch` 無守門);修前紅只用**不啟動瀏覽器**之測試(`unit-pwOnly` 只掃檔案文字,拷貝到 `git archive HEAD` 解出之舊樹實跑即 4 failing);接線測試之變異一律只改 helper 之**副本**(`tmp/pm-mk/mut/`)且變異後之行為只經替身或 headless shell,不會落到真 Chrome(例:變異「繞過 w-playwright」讓 R07-5 之替身落空、`seen.length` 為 0 而紅,不會真啟動)——若變異會讓 `launchBrowser` 真去啟動真 Chrome(如改匯入 `playwright-core` 直接 `launch`),**不得跑**.
+- **`setBrowserTypeForTest` 之 `next(o)` 對已合併之選項再合併**:結果之 `--disable-features` 集合與第一次相同,只是項目排序改為「守門在前、其餘依字母序」(`getChromiumLaunchOptions(getChromiumLaunchOptions(x))` 之 `args` 不逐字相等、`ignoreDefaultArgs` 相等);斷言以集合比對,不要比對字串.`fakeDesktop.mjs` 之 `next({ ...opts, headless: true })` 因此安全(命令列仍恰一串).
+- **盤點正則不能被測試自身命中**:R-PW-ONLY 之 `rg` 盤點指令會命中測試檔內「正例字串」(如以字串寫 `from` 加引號再接 playwright);`unit-pwOnly` 之防空集合案以變數組字(`'play' + 'wright'`)產生正反例,原始碼不含可命中之字面,並排除自身檔.
+- **同檔共用**:`unit-compare` 原自行 `chromium.launch`,改經 `launchBrowser()`(唯一啟動點);R07-4 以掃描鎖定「呼叫 `launchBrowser` 之測試檔=5、各至多 1 次」,新增會啟動瀏覽器之測試時須同步該全集.
+- **替身桌面實跑**:`NODE_OPTIONS=--import=file:///…/test/tools/fakeDesktop.mjs`(路徑之中文須百分比編碼),4 個桌面測試檔 12 passing(約 5 秒),啟動 4 次無頭真 Chrome(經 w-playwright 之登入守門),`badpw` 前後 0→0.fakeDesktop 與 helper 取同一個 `w-playwright` 模組(皆解析自本套件 `node_modules`);FD_TREE 副本若在別處且自帶 `node_modules`,替身作用不到副本(兩份模組),須放本套件根之下.
+
 ## 2026-11-02 npm包檢查測試依新規格改寫(pk-mousekey)
 
 - **舊規定(「開發用檔/sgud/docs/test/toolg不得入包」、整包大小上限)已作廢**:規格改為 dspec〈自有套件之npm發布範圍〉原則1(npm包=git版控內容,皆隨包)與原則2〈套件測試之npm包檢查〉①「不得入包」只列外部執行檔/壓縮檔、`bin/`除清單外之檔、`CLAUDE*.md`、`tmp/`、`test/_tmp/`、`.env`;②大小只計執行期`src/`+`dist/`+`bin/`.日後新增打包斷言先對照此規格,**不得斷言`sgud/`,`docs/`,`test/`,`toolg/`,`script.txt`,開發設定檔「不在」**.
