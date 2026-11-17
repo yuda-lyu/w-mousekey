@@ -2,6 +2,10 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 2026-11-18 離線缺檔訊息改結構欄位(eb1)
+
+- wsemi 1.9.64 起 `E_OFFLINE_MISSING` 訊息不帶值(V20),原斷言訊息含 sha256、大小、快取與鏡像路徑之案改驗 `err.missing[0]`(`name`、`sha256`、`size`、`cachePath`、`mirrorPath`、`url`、`bundle`),訊息只斷言含檔名且不含 sha256 與路徑;`mirrorPath` 於未設鏡像時為 `null`,故鏡像位置另以設了鏡像之案驗.本套件 `src/` 無錯誤包裝(錯誤物件原樣向上傳),無須改碼.
+
 ## 2026-11-13 瀏覽器改經 w-playwright(pm-mk,排程第 442 項)
 
 - **為何**:Chromium 系瀏覽器(真 Chrome 153 起)每啟動一個新根行程即以錯誤密碼替目前使用者呼叫一次 `LogonUser`,10 分鐘內 10 次鎖帳號;`w-playwright` 於每次啟動合併出恰一串 `--disable-features`(含 `AutofillAiWalletPrivatePasses`).規則見規則帳本 R07.

@@ -50,6 +50,8 @@
 - 2026-10-29(bin-mousekey):新測試`api-ensureBins`(T3~T7與接線),`unit-binManifest`(T1,T2含提交位元組),`unit-npmPack`(更新)全綠;修前紅(HEAD之`src/`配新測試)、變異皆見任務報告`agent-out/bin-mousekey-修正報告.md`.舊`unit-binEnsure`(48),`unit-binConcurrent`(3),`api-ghDownload`(7),`unit-binManifest`(舊4)隨自寫程式刪除.
 - 真實執行(L5):本機鏡像供檔,快取路徑含中文,`mousekey.sendString('')`經真AutoHotkey成功,`screen.screenFullSave`得真PNG,快取內`AutoHotkey64.exe`可執行.
 
+- 2026-11-18(eb1,wsemi 1.9.64 V20連動):離線缺檔(`E_OFFLINE_MISSING`)之訊息只列檔名與準備方法,sha256,大小,`cachePath`,`mirrorPath`,來源網址改由`err.missing[]`讀取;`api-ensureBins`之兩個T6案改驗結構欄位(訊息只斷言含檔名且不含sha256與路徑),`src/`無包裝故未改,README〈外部執行檔〉已補`err.missing[]`範例.
+
 ## 已知缺口與待辦
 
 - `dist/w-mousekey.umd.js`仍是舊建置(內含舊的下載邏輯),發布時自動重新產製;已以相同設定建置到`tmp/`驗證新模組可打包、可載入.

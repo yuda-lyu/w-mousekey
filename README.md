@@ -99,7 +99,7 @@ AutoHotkey 以 GNU GPL v2 授權,授權全文見 repo 之 `licenses/AutoHotkey-l
 - 環境變數:
   - `W_BIN_CACHE=<資料夾>`:快取改放 `<資料夾>/w-mousekey/`(套件所在之 `node_modules` 唯讀時使用,多套件可共用同一資料夾).
   - `W_BIN_MIRROR=<資料夾或 http(s) 網址>`:內網鏡像,先找鏡像再連 GitHub;結構為 `<鏡像>/w-mousekey/<sha256>/<檔名>`.鏡像之檔同樣以清單校驗,不符即不用.
-  - `W_BIN_OFFLINE=1`:不連網,只用快取與鏡像;缺檔時錯誤(`E_OFFLINE_MISSING`)會列出缺哪些檔、sha256、大小與應放之完整路徑.
+  - `W_BIN_OFFLINE=1`:不連網,只用快取與鏡像;缺檔時 reject 帶 `code === 'E_OFFLINE_MISSING'` 之錯誤,其訊息只列缺哪些檔(檔名)與準備方法,不帶路徑與 sha256;缺檔之 sha256、大小、應放之位置(`cachePath` 為快取內之完整路徑,有設鏡像時另有 `mirrorPath`)與來源網址在錯誤物件之 `err.missing[]`(見下).
 - 離線部署:
   1. 在可連網之電腦設 `W_BIN_CACHE=<空資料夾>`,呼叫 `WMousekey.ensureBins()` 一次(或使用到相關功能一次).
   2. 把該資料夾整個帶到內網電腦,設 `W_BIN_MIRROR=<該資料夾>`(全離線時另設 `W_BIN_OFFLINE=1`).
@@ -112,7 +112,23 @@ let bins = await ensureBins() // { 'AutoHotkey64.exe': '<絕對路徑>', 'zclick
 let binsPart = await ensureBins({ names: ['AutoHotkey64.exe', 'zclick.ahk'] }) // 只取部分
 ```
 
-- `WMousekey` 預設匯出(UMD)以屬性 `WMousekey.ensureBins` 提供同一函數.取不到時 reject 帶 `code` 之 Error(`E_OFFLINE_MISSING`、`E_HASH_MISMATCH`、`E_SIZE_MISMATCH`、`E_HTTP`、`E_NETWORK`、`E_TIMEOUT`、`E_MANIFEST`等,由 wsemi 之 `fsEnsureBins` 統一),訊息含檔名、來源與準備方法.
+- 離線缺檔時之放置位置自 `err.missing[]` 讀取:
+
+```js
+import ensureBins from 'w-mousekey/src/ensureBins.mjs'
+
+try {
+    await ensureBins()
+}
+catch (err) {
+    if (err.code === 'E_OFFLINE_MISSING') {
+        //err.missing[]: [{ name, sha256, size, cachePath, mirrorPath, url, ... }], 把各檔放在 cachePath(或 mirrorPath)
+        console.log(err.missing)
+    }
+}
+```
+
+- `WMousekey` 預設匯出(UMD)以屬性 `WMousekey.ensureBins` 提供同一函數.取不到時 reject 帶 `code` 之 Error(`E_OFFLINE_MISSING`、`E_HASH_MISMATCH`、`E_SIZE_MISMATCH`、`E_HTTP`、`E_NETWORK`、`E_TIMEOUT`、`E_MANIFEST`等,由 wsemi 之 `fsEnsureBins` 統一),訊息只含檔名與準備方法(不帶路徑、網址與 sha256);離線缺檔(`E_OFFLINE_MISSING`)另帶結構欄位 `missing`(見上).
 - `bin/AutoHotkey64.exe` 為 AutoHotkey v2 官方發行檔(https://www.autohotkey.com/download/ )原樣,AutoHotkey 以 GNU GPL v2 授權(https://github.com/AutoHotkey/AutoHotkey/blob/v2.0/license.txt ).
 
 ## Breaking changes
