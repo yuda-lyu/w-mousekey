@@ -81,7 +81,11 @@ describe('R07: 瀏覽器一律經w-playwright', function () {
                 assert(!(pkg[k] && name in pkg[k]), `${k}.${name}`)
             }
         }
-        assert.strictEqual(pkg.devDependencies['w-playwright'], '^1.0.1')
+        //下限以數值比較, 不寫死字面(字面 '^1.0.1' 於 2026-11-21 連動升為 '^1.0.2' 時失效)
+        let m = /^\^(\d+)\.(\d+)\.(\d+)$/.exec(pkg.devDependencies['w-playwright'] || '')
+        assert(m, `devDependencies.w-playwright須為^x.y.z: ${pkg.devDependencies['w-playwright']}`)
+        let [a, b, c] = m.slice(1).map(Number)
+        assert(a > 1 || (a === 1 && (b > 0 || c >= 1)), `devDependencies.w-playwright須^1.0.1以上: ${pkg.devDependencies['w-playwright']}`)
         assert(!(pkg.dependencies && 'w-playwright' in pkg.dependencies), 'w-playwright僅為dev(src不啟動瀏覽器)')
     })
 
