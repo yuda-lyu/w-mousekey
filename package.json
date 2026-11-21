@@ -1,6 +1,6 @@
 {
   "name": "w-mousekey",
-  "version": "1.0.76",
+  "version": "1.0.77",
   "main": "dist/w-mousekey.umd.js",
   "dependencies": {
     "@techstark/opencv-js": "^4.12.0-release.1",
@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "w-package-tools": "^1.1.29",
-    "w-playwright": "^1.0.2"
+    "w-playwright": "^1.0.3"
   },
   "scripts": {
     "test": "mocha --no-parallel \"test/*.test.mjs\" --timeout 180000",
