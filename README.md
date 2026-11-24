@@ -74,9 +74,12 @@ await runScp('./script.json', { onTrace: (e) => console.log(e.type) })
 
 本套件執行期(`src/`)不啟動瀏覽器;只有開發用測試(`unit-mousekey`、`unit-runScp`、`unit-ckPic`、`unit-waitPics`、`unit-compare`)以**有頭之真 Chrome** 驗證 OS 層滑鼠鍵盤與桌面截圖,故 Playwright 僅為開發依賴.瀏覽器一律經自有套件 [`w-playwright`](https://www.npmjs.com/package/w-playwright) 啟動(`devDependencies`,入口為 `test/tools/helper.mjs` 之 `launchBrowser()`,每個測試檔於 `before` 啟動一次、`after` 關閉),不直接依賴 `playwright`／`playwright-core`.
 
-- **安裝**:`npm i` 即帶入 `w-playwright`,其依賴之 `playwright-core` 為精確版本 `1.64.1`;不需也不應另裝 `playwright`／`playwright-core`.
-- **受管瀏覽器之取得**(無頭之 headless shell;`unit-pwWiring` 之真路徑案使用):以 `await wpw.ensureChromium()` 取得(該案於執行時自行呼叫,無法取得時明確略過並寫明原因);**不要用 `npx playwright install`**(依賴樹中他版被提升時會下載到不同版本之瀏覽器).
-- **離線**:於可連網之機器以同版 `w-playwright` 執行一次 `ensureChromium()`,把 Playwright 之瀏覽器資料夾(Windows 預設 `%LOCALAPPDATA%\ms-playwright`)複製至目標機,並以環境變數 `PLAYWRIGHT_BROWSERS_PATH` 指向該資料夾;**須在載入 `w-playwright` 前設定**.
+- **安裝**:`npm i` 即帶入 `w-playwright`,其依賴之 `playwright-core` 為精確版本(由 `w-playwright` 統一,不在此寫死版號);不需也不應另裝 `playwright`／`playwright-core`.
+- **受管瀏覽器之取得與網路需求**(無頭之 headless shell;只有 `unit-pwWiring` 之真路徑案 R07-6 使用,其餘測試用系統已安裝之真 Chrome):測試於該案之 `before` 以 `await wpw.ensureChromium({ timeout })` 集中取得(`test/tools/pwInstall.mjs` 之 `PW_INSTALL_BUDGET_MS` = 900000 ms〔15 分鐘〕,`before` 時限為預算加 60 秒,不受全域案時限 180 秒約束);**不要用 `npx playwright install`**(依賴樹中他版被提升時會下載到不同版本之瀏覽器).
+  - **首次需連網**:瀏覽器目錄(Windows 預設 `%LOCALAPPDATA%\ms-playwright`)內尚無該版本時,由 Playwright 自其 CDN 下載 headless shell 約 130 MB(連同 ffmpeg、winldd 約 131 MB;持續頻寬須約 1.2 Mbit/s 以上才能於 15 分鐘內完成);已備妥者不重複下載,同一 mocha 行程只取得一次(`[pw-browser]` 行紀錄安裝程序與下載次數、用時).每次都從全新環境起跑者(如未掛載瀏覽器目錄之乾淨沙箱、乾淨容器)每次全套皆會真下載一次.
+  - **取得失敗即失敗**(該 `before` 紅燈,不連累不需瀏覽器之 R07-5),不靜默略過;**只有明確宣告離線**(環境變數 `W_BIN_OFFLINE=1` 或 `true`,與〈外部執行檔〉共用同一旗標)且無法取得時才略過 R07-6,並於輸出印出 `[pw-browser] 略過…` 與原因.
+  - 下載主機可由 Playwright 之環境變數 `PLAYWRIGHT_DOWNLOAD_HOST` 指向內網鏡像(ffmpeg、winldd 只認它;headless shell 另可由 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST` 覆蓋,後者優先),全程改道須設 `PLAYWRIGHT_DOWNLOAD_HOST`.
+- **離線**:於可連網之機器以同版 `w-playwright` 執行一次 `ensureChromium()`,把 Playwright 之瀏覽器資料夾(Windows 預設 `%LOCALAPPDATA%\ms-playwright`)複製至目標機,並以環境變數 `PLAYWRIGHT_BROWSERS_PATH` 指向該資料夾(目錄須可寫:`ensureChromium` 會暫放鎖資料夾);**須在載入 `w-playwright` 前設定**;目標機再設 `W_BIN_OFFLINE=1` 即於仍取得不到時略過而非失敗.
 - **真 Chrome**:需有頭真 Chrome 與真實桌面之測試(見 `sgud/rule/rulebook.md` 〈需真實桌面之測試之前置〉)**須先安裝 Google Chrome**;`w-playwright` 之 `findSystemChrome()` 只以檔案存在判定,不代表可啟動.
 - **一律加入之守門參數與原因**:Windows 上 Chromium 153 起,每啟動一個新的瀏覽器根行程,即以無效密碼替目前使用者呼叫一次 `LogonUser`(安全性紀錄 4625、錯誤密碼次數 +1;本機原則 10 分鐘內 10 次即鎖定帳號).`w-playwright` 於每次啟動之命令列**恰給一個** `--disable-features`(Playwright 預設清單＋`AutofillAiWalletPrivatePasses`＋呼叫端自給者),停用該功能即不再發生;本套件測試不得繞過 `w-playwright`(`unit-pwOnly` 掃描全庫無直接匯入 `playwright`／`playwright-core`,`unit-pwWiring` 斷言 `launchBrowser()` 送出之選項含守門).
 - **不支援之環境變數**:`PWDEBUG`(inspector 模式)與 `SELENIUM_REMOTE_URL` 會使守門失效,`w-playwright` 一律拒絕(`E_ENV`).另有選用之執行期登入守門 `W_PLAYWRIGHT_LOGON_GUARD=1`(啟動非 headless shell 之瀏覽器前先讀錯誤密碼次數,≥1 即拒絕),見其 README.

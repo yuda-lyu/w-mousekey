@@ -2,6 +2,19 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.過長時抽出舊者為`experience_<年月日>.md`,並於本檔註明何時抽出.
 
+## 2026-11-25 受管瀏覽器改於 before 集中取得、失敗不靜默略過(tmk632,排程第 632 項;規則 R08)
+
+- **舊寫法之真相**:R07-6 之取得在 `it` 內(不是 `before`),受 describe 層與 `npm test` 之 `--timeout 180000` 約束;取得失敗即 `this.skip()`,乾淨環境(離線或下載被擋)之 R07-6 靜默不跑(實測:下載主機不通+空夾,舊版 `1 passing, 1 pending`、離開碼 0).
+- **自然環境不重現修前紅**:本機網路快(空夾取得 headless shell＋ffmpeg＋winldd 約 13 秒),舊寫法照綠.以**限速鏡像**重現:把 `PLAYWRIGHT_DOWNLOAD_HOST` 與 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST` 皆指向本機鏡像(鏡像把請求轉到 Playwright CDN 並以固定頻寬回送;只限頻寬、不吃 CPU;一次性工具,不入版控),500 KB/s 下舊 R07-6 於 180 秒 `Timeout of 180000ms exceeded`(當時 zip 僅下載 80.7 MB/129.8 MB);須給 mocha `--exit`,否則逾時後懸置之安裝使行程不退出(`--exit` 結束時安裝連線一併關閉).修後同條件 297.3 秒取得完成、2 passing;鏡像紀錄 zip 129,830,431 B(288.9 秒)、ffmpeg、winldd 各恰 1 筆 `complete`.
+- **沙箱實況**:Windows 沙箱(`sbx-run`)只唯讀掛載 Node、Chrome、Git 並掛載工作快照與輸出夾,**未掛 `%LOCALAPPDATA%\ms-playwright`**;沙箱有對外網路,故每次沙箱全套之 R07-6 皆於 `before` 真下載一次(實測 22.1~25.5 秒,`[pw-browser]` 行「安裝程序 1 次, 下載動作 3 次」),不是離線略過;沙箱無對外網路時 `before` 會紅(不略過),須明設 `W_BIN_OFFLINE=1`(`sbx-run --cmd` 可加環境變數前綴)才略過.沙箱全套 121 passing 約 4 分半.
+- **`PLAYWRIGHT_BROWSERS_PATH` 於 w-playwright 載入時固定**(執行期改動不生效):驗收與 PI-8/PI-8b/PI-9 一律以獨立子行程(`test/tools/pwInstallChild.mjs`)給環境;子行程須不繼承 `W_BIN_OFFLINE`、`PLAYWRIGHT_*` 與代理.模擬未安裝只指向 `./tmp/` 空夾,不碰 `%LOCALAPPDATA%\ms-playwright`.
+- **模擬取得失敗**:下載主機指向本機未監聽之埠(`http://127.0.0.1:1`):Playwright 重試數次(輸出中 `ECONNREFUSED` 重複),約 1.5 秒內失敗,不連外網;chromium 家族另認 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST`(優先),ffmpeg、winldd 只認 `PLAYWRIGHT_DOWNLOAD_HOST`,兩個都要設.
+- **離線旗標須於載入時讀**:`setBinEnv`(桌面測試之 `before`)會於測試行程內設 `W_BIN_OFFLINE=1` 並於 `after` 還原;若呼叫時才讀,同行程之取得失敗可能被它靜默略過.mocha 先載入全部測試檔再執行,故模組頂層讀取時尚未被任何測試改動.
+- **mocha 語意**:`before` 內 `this.skip()` 使該 `describe` 之測試全為 pending(父層之 R07-5 不受影響,故 R07-6 獨立為子 `describe`);`this.timeout()` 須在 `await` 之前設;hook 之 `Timeout of N ms` 不分擔取得.
+- **鑑別力教訓**(複審指出):①真路徑案(不用替身)只驗「失敗了」不夠,須驗真實安裝輸出進入訊息(`ECONNREFUSED`),否則預設接線丟掉 `timeout/onTrace/funLog` 仍全綠——另以 `wpw.ensureChromium` 之替身驗預設接線之引數(PI-1b);②去色碼之斷言須讓色碼落在輸出末段內,否則被長度上限擠出而成空斷言;③結構檢查之去註解須保留網址(`https://`),且不應只認 `wpw.ensureChromium(`(別名、解構、方括號取用皆須命中);④`OFFLINE_AT_LOAD` 之變異(任何非空值皆離線)靠 `W_BIN_OFFLINE=0/false` 之真路徑案擊殺.
+- **公開庫衛生**:測試檔頭之跑法註解不得寫主控工具之本機路徑(複審抓到一處,已改為 `npx mocha …`);`sgud/feedback` 之依據欄亦同.
+- **發布包配置**:`npm pack` 之發布包無 `.gitignore`、無 `.git`,且 `bin/` 之執行檔依 R01 不入包——`unit-binManifest`(git、`.gitignore`)與 `unit-npmPack`(`.gitignore`)必敗,桌面測試之 `setBinEnv` 需 `bin/` 實檔作鏡像來源;故發布包配置之驗證另把 `bin/` 實檔複製進解開之目錄、排除該二檔(該二檔於一般配置全套驗).Git Bash 下 `robocopy` 須 `MSYS_NO_PATHCONV=1` 並用反斜線路徑.
+
 ## 2026-11-18 離線缺檔訊息改結構欄位(eb1)
 
 - wsemi 1.9.64 起 `E_OFFLINE_MISSING` 訊息不帶值(V20),原斷言訊息含 sha256、大小、快取與鏡像路徑之案改驗 `err.missing[0]`(`name`、`sha256`、`size`、`cachePath`、`mirrorPath`、`url`、`bundle`),訊息只斷言含檔名且不含 sha256 與路徑;`mirrorPath` 於未設鏡像時為 `null`,故鏡像位置另以設了鏡像之案驗.本套件 `src/` 無錯誤包裝(錯誤物件原樣向上傳),無須改碼.

@@ -2,7 +2,7 @@
 
 本檔記載當前已開發功能之最新狀態(只記現況,過程寫入`sgud/exp/experience.md`),與`sgud/rule/rulebook.md`(藍圖)比對即知尚未做到者.接續工作時先讀本檔.過長時依功能類型拆為`state_<類型>.md`,本檔只留索引.
 
-最近更新:2026-11-13(pm-mk:測試之瀏覽器改經自有套件 `w-playwright`,見下〈瀏覽器經 w-playwright〉;`version` 未動);2026-11-02(pk-mousekey:npm包檢查測試依dspec〈自有套件之npm發布範圍〉原則2〈套件測試之npm包檢查〉①②改寫,`.npmignore`首段改為`.gitignore`完整抄錄,全套`npm test` 101 passing;`version`未動);2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
+最近更新:2026-11-25(tmk632:需受管瀏覽器之測試改於 `before` 集中取得、失敗不靜默略過,見下〈需受管瀏覽器之取得〉與規則 R08;只改測試與文件,`version` 未動);2026-11-13(pm-mk:測試之瀏覽器改經自有套件 `w-playwright`,見下〈瀏覽器經 w-playwright〉;`version` 未動);2026-11-02(pk-mousekey:npm包檢查測試依dspec〈自有套件之npm發布範圍〉原則2〈套件測試之npm包檢查〉①②改寫,`.npmignore`首段改為`.gitignore`完整抄錄,全套`npm test` 101 passing;`version`未動);2026-10-30(a-mousekey:負載執行器改用wsemi 1.9.33統一版,`wsemi`升至^1.9.33;前一輪tm-mousekey2:真實桌面負載試驗/變異/全套已跑).`package.json`之`version`為1.0.45(本輪未動,新版由使用者發布).
 
 ## 瀏覽器經 w-playwright(規則R07,pm-mk,排程第 442 項,2026-11-13)
 
@@ -13,6 +13,16 @@
 | 替身桌面 | `fakeDesktop.mjs` 改以 `wpw.setBrowserTypeForTest` 強制無頭;4 個桌面測試檔 12 passing(2026-11-13,`badpw` 0→0) | R05,R07 | 手動 |
 | 全庫盤點 | R-PW-ONLY 兩條指令 0 命中(防空集合以 w-playwright `src/_pw.mjs` 為正例);啟動點全集 1 處 | R07 | `unit-pwOnly` |
 | README | 新增〈開發與測試之瀏覽器(經 `w-playwright`)〉:安裝、`ensureChromium()`、離線 `PLAYWRIGHT_BROWSERS_PATH`、真 Chrome 須安裝、守門參數與原因、不支援之環境變數、行為變更 | — | — |
+
+## 需受管瀏覽器之取得(規則R08,tmk632,排程第 632 項,2026-11-25)
+
+| 項目 | 現況 | 規則 | 測試 |
+| --- | --- | --- | --- |
+| 取得點 | `unit-pwWiring` 之子 `describe('R07-6 真路徑(需受管瀏覽器)')` 之 `before`:`this.timeout(PW_INSTALL_BUDGET_MS + 60000)`(=960000 ms)後 `await ensurePwBrowserOrSkip()`;R07-6 之 `it` 不再取得(仍受全域 180000,只啟動已備妥之 headless shell) | R08 | `unit-pwInstall`(PI-7) |
+| 共用工具 | `test/tools/pwInstall.mjs`:`PW_INSTALL_BUDGET_MS`=900000、`createPwBrowserTool`、`ensurePwBrowser`(同行程一次,失敗亦記憶,訊息附輸出末段與 `cause`)、`ensurePwBrowserOrSkip`;子行程夾具 `pwInstallChild.mjs` | R08 | `unit-pwInstall`(PI-1~PI-9) |
+| 略過語意 | 預設取得失敗即 `before` 紅(不連累 R07-5);僅 `W_BIN_OFFLINE` 為 `1`/`true`(載入時讀取)才略過並輸出 `[pw-browser] 略過…`;全庫無 `autoInstall` | R08 | `unit-pwInstall`(PI-4,PI-5,PI-7b,PI-8,PI-8b,PI-9) |
+| README | 〈開發與測試之瀏覽器〉補〈受管瀏覽器之取得與網路需求〉:首次需連網約 131 MB、預算、失敗即失敗、`W_BIN_OFFLINE`、下載主機變數、離線目錄須可寫 | — | — |
+| 沙箱 | `sbx-run` 之沙箱未掛瀏覽器目錄 ⇒ 每次沙箱全套 R07-6 之 `before` 真下載一次(實測見〈驗證紀錄〉);須有對外網路 | R08 | 手動(`sbx-run`) |
 
 ## 計時器相關之測試(規則R05,tm-mousekey)
 
@@ -44,6 +54,15 @@
 | rollup | `toolg/gDistRollup.mjs`之external/globals補`url`,`stream`,`stream/promises`(原已有`os`,`crypto`,`child_process`);已以`tmp/`重建UMD驗證:`require()`所得物件含`ensureBins`,`ensureBins`之套件根為`dist/`上一層 | R02 | 手動(見經驗) |
 
 ## 驗證紀錄
+
+- 2026-11-25(tmk632,排程第 632 項,規則 R08;只改測試與文件,`version` 未動):
+  - 空瀏覽器夾(`PLAYWRIGHT_BROWSERS_PATH` 指 `./tmp/` 空夾,不動 `%LOCALAPPDATA%\ms-playwright`)跑 `unit-pwWiring`:2 passing,取得 13.2 秒、`[pw-browser]` 行「安裝程序 1 次, 下載動作 3 次」,夾內三項(`chromium_headless_shell-1255`、`ffmpeg-1013`、`winldd-1007`)皆有 `INSTALLATION_COMPLETE`.
+  - 取得失敗(下載主機指向本機未監聽埠+空夾):新 `unit-pwWiring` 1 passing／1 failing(R07-6 之 `before` 紅,R07-5 仍綠,用 1.5 秒);舊版(HEAD)同條件 1 passing／1 pending、離開碼 0(靜默略過).
+  - 慢網路(500 KB/s 限速鏡像,空夾):舊版 R07-6 `Timeout of 180000ms exceeded`(zip 僅下載 80.7 MB);新版 2 passing,取得 297.3 秒,鏡像紀錄 zip 129,830,431 B(288.9 秒)、ffmpeg、winldd 各恰 1 筆完成.
+  - 沙箱全套(`sbx-run`,一般配置,最終程式碼):121 passing／0 failing／0 pending(3 分 46 秒);沙箱未掛瀏覽器目錄,R07-6 之 `before` 真下載 3 項、22.8 秒(沙箱有對外網路).
+  - 發布包配置(`npm pack` 解開、複製 `node_modules` 與 `bin/` 夾具〔`bin/` 執行檔依 R01 不入包〕,沙箱):不排除任何檔之全跑(網址遮罩加入前之版本)112 passing／8 failing／1 pending,失敗與 pending 全在 `unit-binManifest`(3 failing＋1 pending)與 `unit-npmPack`(5 failing)——發布包無 `.gitignore`、無 `.git`,且夾具 `bin/` 實檔使包內容檢查必敗;排除此二檔(mocha `--ignore`)之最終程式碼再跑:104 passing／0 failing／0 pending(R07-6 之 `before` 真下載 3 項、21.5 秒);此二檔於一般配置全綠.
+  - 失敗訊息之安裝輸出末段已遮罩網址整串(診斷輸出與遮罩規格 D3;PI-3 驗,另以「不遮罩」變異擊殺).
+  - `unit-pwInstall` 13 案;36 項變異(工具 21＋`unit-pwWiring` 結構 12＋他處新增 3)全數擊殺,`sha256` 回驗還原.eslint 0 問題;private-guard CLEAN.
 
 - 2026-10-30(a-mousekey,第184項):`unit-loadTrial`(R06,8案)主機`--lock`綠(約4 s);7項變異皆使對應案轉紅;`loadTrial`以本套件用法實跑不需桌面之子集(`unit-waitPicsTrace`,`unit-runScpTrace`,`unit-keySyntax`,`unit-compare`,`--runs 3 --lag 400:1000`)3輪皆38 passing、0失敗、每次自行退出;全套`npm test`經`sbx-run`(Windows沙箱,快照執行)99 passing(原91+8),0 failing,0 pending,耗時約2分.
 

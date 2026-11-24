@@ -1,8 +1,10 @@
 //R07接線測試(R-PW-WIRING): 本套件測試啟動瀏覽器之唯一入口test/tools/helper.mjs之launchBrowser, 確實經w-playwright, 送出之選項含守門
 //以wpw.setBrowserTypeForTest之替身斷言(含替身確被呼叫); 另一案經next()走真路徑(完整流程後以headless shell實際啟動, 不啟動真Chrome/Edge/完整Chromium)
+//真路徑案需Playwright受管瀏覽器(首次需連網下載約130MB): 於其子describe之before集中取得(規則R08, 見test/tools/pwInstall.mjs; 時限對齊安裝預算, 取得失敗即失敗, 僅明確離線W_BIN_OFFLINE才略過並輸出原因)
 import assert from 'assert'
 import wpw from 'w-playwright'
 import { launchBrowser } from './tools/helper.mjs'
+import { PW_INSTALL_BUDGET_MS, ensurePwBrowserOrSkip } from './tools/pwInstall.mjs'
 
 const GUARD = 'AutofillAiWalletPrivatePasses'
 
@@ -78,33 +80,40 @@ describe('R07: launchBrowser經w-playwright(接線)', function () {
         await browser.close()
     })
 
-    it('R07-6 真路徑: 經next()走w-playwright完整流程(環境、版本、守門、合併)後以headless shell實際啟動, 頁面可用且事件紀錄器已注入', async function () {
-        //spec: R-PW-WIRING至少一案不用替身處理選項(以next(o)走真Playwright); 不啟動真Chrome/Edge/完整Chromium(headless shell本即不觸發LogonUser)
-        try {
-            await wpw.ensureChromium()
-        }
-        catch (err) {
-            //無法取得受管瀏覽器(離線且未安裝): 明確略過並寫明原因, 不當成通過
-            this.skip()
-        }
-        let seen = []
-        restore = wpw.setBrowserTypeForTest({
-            launch: async (o, next) => {
-                seen.push(o)
-                return next({ ...o, headless: true, channel: undefined })
-            },
+    //R07-6需Playwright受管瀏覽器(headless shell, 約130MB): 集中於此before取得(時限對齊安裝預算, 不受全域案時限180秒約束), 不在it內取得(規則R08);
+    //取得失敗即before失敗(不略過, 乾淨環境才不會悄悄不跑); 僅明確離線環境(W_BIN_OFFLINE為1或true)才略過並輸出原因;
+    //獨立之子describe: 取得失敗不連累不需瀏覽器之R07-5
+    describe('R07-6 真路徑(需受管瀏覽器)', function () {
+        before(async function () {
+            this.timeout(PW_INSTALL_BUDGET_MS + 60000)
+            let reason = await ensurePwBrowserOrSkip()
+            if (reason) {
+                this.skip()
+            }
         })
-        let { browser, page } = await launchBrowser()
-        try {
-            assert.strictEqual(seen.length, 1) //替身確被呼叫
-            assert(browser.isConnected())
-            await page.goto('data:text/html,<div id="a">ok</div>')
-            assert.strictEqual(await page.evaluate(() => document.getElementById('a').textContent), 'ok')
-            assert.strictEqual(await page.evaluate(() => Array.isArray(window.__mkEv)), true)
-        }
-        finally {
-            await browser.close()
-        }
+
+        it('R07-6 真路徑: 經next()走w-playwright完整流程(環境、版本、守門、合併)後以headless shell實際啟動, 頁面可用且事件紀錄器已注入', async function () {
+            //spec: R-PW-WIRING至少一案不用替身處理選項(以next(o)走真Playwright); 不啟動真Chrome/Edge/完整Chromium(headless shell本即不觸發LogonUser)
+            let seen = []
+            restore = wpw.setBrowserTypeForTest({
+                launch: async (o, next) => {
+                    seen.push(o)
+                    return next({ ...o, headless: true, channel: undefined })
+                },
+            })
+            let { browser, page } = await launchBrowser()
+            try {
+                assert.strictEqual(seen.length, 1) //替身確被呼叫
+                assert(browser.isConnected())
+                await page.goto('data:text/html,<div id="a">ok</div>')
+                assert.strictEqual(await page.evaluate(() => document.getElementById('a').textContent), 'ok')
+                assert.strictEqual(await page.evaluate(() => Array.isArray(window.__mkEv)), true)
+            }
+            finally {
+                await browser.close()
+            }
+        })
+
     })
 
 })
